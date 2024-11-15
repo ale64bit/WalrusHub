@@ -14,10 +14,8 @@ class SolvePresetWindow : public Window {
 
  private:
   std::vector<SolvePreset> presets_;
-  bool first_ = true;
 
-  static void on_row_selected(GtkListBox* self, GtkListBoxRow* row,
-                              gpointer user_data);
+  static void on_preset_clicked(GtkWidget* self, gpointer data);
 };
 
 }  // namespace ui

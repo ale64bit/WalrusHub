@@ -24,8 +24,7 @@ static Rank parse_101weiqi_rank(std::string_view s) {
   return Rank::kUnknown;
 }
 
-std::optional<Task> import_101weiqi_task(std::string_view data,
-                                         std::vector<std::string>& tags) {
+std::optional<Task> import_101weiqi_task(std::string_view data) {
   auto from = data.find("var g_qq = {");
   if (from == data.npos) return {};
   auto to = data.find("\"};", from);
@@ -43,72 +42,19 @@ std::optional<Task> import_101weiqi_task(std::string_view data,
   task.description_ = e["title"];
   std::replace(task.description_.begin(), task.description_.end(), '\'', ';');
   task.rating_ = e["vote"];
-  switch ((int)e["qtype"]) {
-    case 1:
-      tags.push_back("life_and_death");
-      break;
-    case 2:
-      tags.push_back("tesuji");
-      break;
-    case 3:
-      tags.push_back("joseki");
-      break;
-    case 4:
-      tags.push_back("opening");
-      break;
-    case 5:
-      tags.push_back("endgame");
-      break;
-    case 8:
-      tags.push_back("appreciation");
-      break;
-    case 9:
-      tags.push_back("trick");
-      break;
-    case 10:
-      tags.push_back("middlegame");
-      break;
-    case 11:
-      tags.push_back("mirror");
-      break;
-    case 12:
-      tags.push_back("theory");
-      break;
-    case 13:
-      tags.push_back("opening");
-      tags.push_back("pick_answer");
-      break;
-    case 14:
-      tags.push_back("middlegame");
-      tags.push_back("pick_answer");
-      break;
-    case 15:
-      tags.push_back("endgame");
-      tags.push_back("pick_answer");
-      break;
-    case 16:
-      tags.push_back("luozi");
-      break;
-    case 17:
-      tags.push_back("capture");
-      break;
-    case 21:
-      tags.push_back("capture_race");
-      break;
-  }
+  task.type_ = TaskType((int)e["qtype"]);
   task.rank_ = parse_101weiqi_rank(std::string(e["levelname"]));
   task.first_to_play_ = e["blackfirst"] ? wq::Color::kBlack : wq::Color::kWhite;
   task.board_size_ = e["lu"];
   task.top_left_ = wq::Point(e["pos_y1"], e["pos_x1"]);
   task.bottom_right_ = wq::Point(e["pos_y2"], e["pos_x2"]);
 
-  task.md_["id"] = std::to_string((int)e["id"]);
-  task.md_["public_id"] = std::to_string((int)e["publicid"]);
-  task.md_["attr_type"] = std::to_string((int)e["attr_type"]);
+  task.metadata_["public_id"] = std::to_string((int)e["publicid"]);
 
   task.vtree_ = std::make_unique<TreeNode>();
   for (const auto& ans : e["answers"]) {
     if (ans["st"] != 2) continue;
+    if (ans["pts"].empty()) continue;
 
     TreeNode* cur = task.vtree_.get();
     for (const auto& cp : ans["pts"]) {
@@ -131,19 +77,20 @@ std::optional<Task> import_101weiqi_task(std::string_view data,
         }
         cur->children_[p] = std::move(next);
       }
-      cur->answer_ = {};
       cur = cur->children_[p].get();
     }
-    switch ((int)ans["ty"]) {
-      case 1:
-        cur->answer_ = AnswerType::kCorrect;
-        break;
-      case 2:
-        cur->answer_ = AnswerType::kVariation;
-        break;
-      case 3:
-        cur->answer_ = AnswerType::kWrong;
-        break;
+    if (!cur->answer_) {
+      switch ((int)ans["ty"]) {
+        case 1:
+          cur->answer_ = AnswerType::kCorrect;
+          break;
+        case 2:
+          cur->answer_ = AnswerType::kVariation;
+          break;
+        case 3:
+          cur->answer_ = AnswerType::kWrong;
+          break;
+      }
     }
   }
 

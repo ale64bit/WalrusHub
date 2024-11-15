@@ -17,7 +17,7 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset)
     task_ids_.resize(preset_.max_tasks_);
   LOG(INFO) << "solve session started: task_count=" << task_ids_.size();
 
-  gtk_window_set_title(GTK_WINDOW(window_), "Solve");
+  gtk_window_set_title(GTK_WINDOW(window_), preset_.description_.c_str());
   gtk_window_set_default_size(GTK_WINDOW(window_), 800, 800);
 
   GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
@@ -26,10 +26,17 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset)
   GtkWidget* top_box = gtk_center_box_new();
 
   rank_label_ = gtk_label_new("Rank: ?");
+  gtk_widget_set_margin_start(rank_label_, 8);
+  gtk_widget_set_margin_end(rank_label_, 8);
   gtk_center_box_set_start_widget(GTK_CENTER_BOX(top_box), rank_label_);
 
   turn_label_ = gtk_label_new("");
   gtk_center_box_set_center_widget(GTK_CENTER_BOX(top_box), turn_label_);
+
+  task_type_label_ = gtk_label_new("");
+  gtk_widget_set_margin_start(task_type_label_, 8);
+  gtk_widget_set_margin_end(task_type_label_, 8);
+  gtk_center_box_set_end_widget(GTK_CENTER_BOX(top_box), task_type_label_);
 
   gtk_box_append(GTK_BOX(box), top_box);
   gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
@@ -134,7 +141,7 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset)
     }
 
     opponent_move_source_ =
-        g_timeout_add_once(40, &SolveWindow::on_opponent_move, this);
+        g_timeout_add_once(20, &SolveWindow::on_opponent_move, this);
   });
   goban_->set_on_point_enter([this](int r, int c) {
     if (board_->at(r, c) != wq::Color::kEmpty) return;
@@ -233,7 +240,9 @@ void SolveWindow::on_opponent_move(gpointer data) {
 
 void SolveWindow::load_task(int64_t task_id) {
   if (auto task_opt = ctx_.tasks().get_task(task_id)) {
-    LOG(INFO) << "task loaded: id=" << task_id;
+    LOG(INFO) << "task loaded: id=" << task_id
+              << " public_id=" << task_opt->metadata_["public_id"]
+              << " type=" << (int)task_opt->type_;
     task_ = std::move(task_opt.value());
     reset_task(false);
   }
@@ -275,16 +284,21 @@ void SolveWindow::reset_task(bool is_solved) {
     gtk_label_set_text(GTK_LABEL(time_result_label_), "--");
 
   gtk_label_set_text(GTK_LABEL(rank_label_), "Rank: ?");
+  std::string prompt;
   switch (task_.first_to_play_) {
     case wq::Color::kEmpty:
       break;
     case wq::Color::kBlack:
-      gtk_label_set_text(GTK_LABEL(turn_label_), "Black to play");
+      prompt = "Black to play";
       break;
     case wq::Color::kWhite:
-      gtk_label_set_text(GTK_LABEL(turn_label_), "White to play");
+      prompt = "White to play";
       break;
   }
+  if (!task_.description_.empty()) prompt += " - " + task_.description_;
+  gtk_label_set_text(GTK_LABEL(turn_label_), prompt.c_str());
+  gtk_label_set_text(GTK_LABEL(task_type_label_),
+                     task_type_string(task_.type_));
 
   gtk_widget_set_sensitive(GTK_WIDGET(reset_button_), false);
 

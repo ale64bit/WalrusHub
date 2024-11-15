@@ -67,6 +67,26 @@ enum class Rank {
   k15D,
 };
 
+enum class TaskType {
+  kUnknown = 0,
+  kLifeAndDeath = 1,
+  kTesuji = 2,
+  kJoseki = 3,
+  kOpening = 4,
+  kEndgame = 5,
+  kAppreciation = 8,
+  kTrick = 9,
+  kMiddlegame = 10,
+  kMirror = 11,
+  kTheory = 12,
+  kOpeningChoice = 13,
+  kMiddlegameChoice = 14,
+  kEndgameChoice = 15,
+  kLuoZi = 16,
+  kCapture = 17,
+  kCaptureRace = 21,
+};
+
 enum class AnswerType {
   kCorrect,
   kVariation,
@@ -83,8 +103,9 @@ struct Task {
   int64_t id_;
   std::string source_;
   std::string description_;
+  TaskType type_;
   std::vector<int64_t> tags_;
-  std::unordered_map<std::string, std::string> md_;
+  std::unordered_map<std::string, std::string> metadata_;
   float rating_;
   Rank rank_;
   wq::Color first_to_play_;
@@ -92,6 +113,7 @@ struct Task {
   wq::Point top_left_;
   wq::Point bottom_right_;
   wq::PointList initial_[2];
+  wq::PointList answer_points_;
   std::map<wq::Point, std::string> labels_;
   std::unique_ptr<TreeNode> vtree_;
 };
@@ -100,6 +122,7 @@ struct SolvePreset {
   std::string description_;
   std::vector<std::string> sources_;
   std::vector<std::string> tags_;
+  std::vector<TaskType> types_;
   Rank min_rank_ = Rank::kUnknown;
   Rank max_rank_ = Rank::kUnknown;
   float min_rating_ = 0;
@@ -124,6 +147,7 @@ class TaskDB {
 
   int64_t get_tag_id(std::string_view tag_name) const;
   int64_t add_tag(std::string_view tag_name);
+  void add_tag(int64_t tag_id, std::string_view tag_name);
   std::optional<TaskTag> get_tag(int64_t tag_id) const;
   int64_t add_task(const Task& task);
   std::optional<Task> get_task(int64_t id) const;
@@ -136,9 +160,11 @@ class TaskDB {
   static std::string encode_point(const wq::Point& p);
   static json encode_point_list(const wq::PointList& pl);
   static json encode_task_initial_stones(const Task& task);
+  static json encode_task_answer_points(const Task& task);
   static json encode_task_labels(const Task& task);
   static json encode_task_vtree_node(const TreeNode* node);
   static json encode_task_vtree(const Task& task);
+  static json encode_metadata(const Task& task);
 
   // Deserialization
   static wq::Point decode_point(std::string_view s);
@@ -180,5 +206,5 @@ class TaskVTreeIterator {
 };
 
 const char* rank_string(Rank rank);
-std::optional<Task> import_101weiqi_task(std::string_view data,
-                                         std::vector<std::string>& tag_names);
+const char* task_type_string(TaskType type);
+std::optional<Task> import_101weiqi_task(std::string_view data);

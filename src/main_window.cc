@@ -10,7 +10,7 @@ namespace ui {
 
 MainWindow::MainWindow(AppContext& ctx) : Window(ctx) {
   gtk_window_set_title(GTK_WINDOW(window_), "Walrus Hub");
-  gtk_window_set_default_size(GTK_WINDOW(window_), 400, 400);
+  gtk_window_set_default_size(GTK_WINDOW(window_), 200, 80);
 
   GtkWidget* grid = gtk_grid_new();
 
@@ -20,7 +20,7 @@ MainWindow::MainWindow(AppContext& ctx) : Window(ctx) {
   gtk_widget_set_hexpand(GTK_WIDGET(editor_button), true);
   gtk_widget_set_halign(GTK_WIDGET(editor_button), GTK_ALIGN_FILL);
 
-  GtkWidget* solve_button = gtk_button_new_with_label("Solve");
+  GtkWidget* solve_button = gtk_button_new_with_label("Training");
   g_signal_connect(solve_button, "clicked", G_CALLBACK(on_solve_clicked), this);
   gtk_widget_set_hexpand(GTK_WIDGET(solve_button), true);
   gtk_widget_set_halign(GTK_WIDGET(solve_button), GTK_ALIGN_FILL);

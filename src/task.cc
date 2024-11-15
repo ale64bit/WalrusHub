@@ -12,6 +12,7 @@ constexpr const char *kTaskDBSchema = R"(
     id             INTEGER PRIMARY KEY,
     source         TEXT,
     description    TEXT,
+    type           INTEGER NOT NULL,
     rank           INTEGER NOT NULL,
     rating         REAL,
     first_to_play  INTEGER NOT NULL,
@@ -21,8 +22,10 @@ constexpr const char *kTaskDBSchema = R"(
     bottom_right_r INTEGER NOT NULL,
     bottom_right_c INTEGER NOT NULL,
     initial_stones TEXT NOT NULL,
+    answer_points  TEXT,
     labels         TEXT,
-    vtree          TEXT NOT NULL
+    vtree          TEXT NOT NULL,
+    metadata       TEXT
   );
 
   CREATE TABLE IF NOT EXISTS tags (
@@ -90,6 +93,16 @@ int64_t TaskDB::add_tag(std::string_view tag_name) {
   return sqlite3_last_insert_rowid(db_);
 }
 
+void TaskDB::add_tag(int64_t tag_id, std::string_view tag_name) {
+  std::ostringstream q;
+  q << "INSERT INTO tags (id, name) VALUES (" << tag_id << ", '" << tag_name
+    << "');";
+  if (sqlite3_exec(db_, q.str().c_str(), nullptr, nullptr, nullptr)) {
+    LOG(ERROR) << "add_tag: code=" << sqlite3_errcode(db_) << ": "
+               << sqlite3_errmsg(db_);
+  }
+}
+
 std::optional<TaskTag> TaskDB::get_tag(int64_t tag_id) const {
   std::optional<TaskTag> tag;
   std::ostringstream q;
@@ -119,18 +132,21 @@ int TaskDB::get_tag_cb(void *out, int /*column_count*/, char **column_value,
 
 int64_t TaskDB::add_task(const Task &task) {
   std::ostringstream q;
-  q << "INSERT INTO tasks (source, description, rank, rating, first_to_play, "
+  q << "INSERT INTO tasks (source, description, type, rank, rating, "
+       "first_to_play, "
        "board_size, top_left_r, top_left_c, bottom_right_r, bottom_right_c, "
-       "initial_stones, labels, vtree) VALUES ("
+       "initial_stones, answer_points, labels, vtree, metadata) VALUES ("
     << "'" << task.source_ << "', "
-    << "'" << std::quoted(task.description_) << "', " << (int)task.rank_ << ", "
-    << task.rating_ << ", " << (int)task.first_to_play_ << ", "
-    << task.board_size_ << ", " << task.top_left_.first << ", "
-    << task.top_left_.second << ", " << task.bottom_right_.first << ", "
-    << task.bottom_right_.second << ", "
+    << "'" << task.description_ << "', " << (int)task.type_ << ", "
+    << (int)task.rank_ << ", " << task.rating_ << ", "
+    << (int)task.first_to_play_ << ", " << task.board_size_ << ", "
+    << task.top_left_.first << ", " << task.top_left_.second << ", "
+    << task.bottom_right_.first << ", " << task.bottom_right_.second << ", "
     << "'" << encode_task_initial_stones(task).dump() << "', "
+    << "'" << encode_task_answer_points(task).dump() << "', "
     << "'" << encode_task_labels(task).dump() << "', "
-    << "'" << encode_task_vtree(task).dump() << "');";
+    << "'" << encode_task_vtree(task).dump() << "', "
+    << "'" << encode_metadata(task) << "');";
 
   if (sqlite3_exec(db_, q.str().c_str(), nullptr, nullptr, nullptr)) {
     LOG(ERROR) << "add_task: code=" << sqlite3_errcode(db_) << ": "
@@ -186,6 +202,15 @@ std::vector<int64_t> TaskDB::get_tasks(SolvePreset preset) const {
     for (size_t i = 0; i < preset.sources_.size(); ++i) {
       if (i > 0) q << ", ";
       q << "'" << preset.sources_[i] << "'";
+    }
+    q << "))";
+  }
+
+  if (!preset.types_.empty()) {
+    q << " AND (type IN (";
+    for (size_t i = 0; i < preset.types_.size(); ++i) {
+      if (i > 0) q << ", ";
+      q << (int)preset.types_[i];
     }
     q << "))";
   }
@@ -251,32 +276,40 @@ int TaskDB::get_task_cb(void *out, int /*column_count*/, char **column_value,
   task.id_ = std::stoll(column_value[0]);
   if (column_value[1]) task.source_ = column_value[1];
   if (column_value[2]) task.description_ = column_value[2];
-  task.rank_ = Rank(std::atoi(column_value[3]));
-  if (column_value[4]) task.rating_ = std::atof(column_value[4]);
-  task.first_to_play_ = wq::Color(std::atoi(column_value[5]));
-  task.board_size_ = std::atoi(column_value[6]);
+  task.type_ = TaskType(std::atoi(column_value[3]));
+  task.rank_ = Rank(std::atoi(column_value[4]));
+  if (column_value[4]) task.rating_ = std::atof(column_value[5]);
+  task.first_to_play_ = wq::Color(std::atoi(column_value[6]));
+  task.board_size_ = std::atoi(column_value[7]);
   task.top_left_ =
-      wq::Point(std::atoi(column_value[7]), std::atoi(column_value[8]));
+      wq::Point(std::atoi(column_value[8]), std::atoi(column_value[9]));
   task.bottom_right_ =
-      wq::Point(std::atoi(column_value[9]), std::atoi(column_value[10]));
+      wq::Point(std::atoi(column_value[10]), std::atoi(column_value[11]));
 
   // Initial stones
   {
-    json j = json::parse(column_value[11]);
+    json j = json::parse(column_value[12]);
     task.initial_[0] = decode_point_list(j[0]);
     task.initial_[1] = decode_point_list(j[1]);
   }
 
+  // Answer points
+  if (column_value[13]) {
+    json j = json::parse(column_value[13]);
+    task.answer_points_ = decode_point_list(j);
+  }
+
   // Labels
-  if (column_value[12]) {
-    json j = json::parse(column_value[12]);
+  if (column_value[14]) {
+    json j = json::parse(column_value[14]);
     for (const auto &[p, label] : j.items()) {
       task.labels_[decode_point(p)] = label;
     }
   }
 
   // Vtree
-  task.vtree_ = decode_task_vtree(json::parse(column_value[13]));
+  task.vtree_ = decode_task_vtree(json::parse(column_value[15]));
+  task.metadata_ = json::parse(column_value[16]);
 
   *((std::optional<Task> *)out) = std::move(task);
 
@@ -325,6 +358,10 @@ json TaskDB::encode_task_initial_stones(const Task &task) {
   };
 }
 
+json TaskDB::encode_task_answer_points(const Task &task) {
+  return encode_point_list(task.answer_points_);
+}
+
 json TaskDB::encode_task_labels(const Task &task) {
   json ret = {};
   for (const auto &[p, label] : task.labels_) ret[encode_point(p)] = label;
@@ -347,6 +384,12 @@ json TaskDB::encode_task_vtree_node(const TreeNode *node) {
 
 json TaskDB::encode_task_vtree(const Task &task) {
   return encode_task_vtree_node(task.vtree_.get());
+}
+
+json TaskDB::encode_metadata(const Task &task) {
+  json ret = json::object();
+  for (const auto &[k, v] : task.metadata_) ret[k] = v;
+  return ret;
 }
 
 TaskVTreeIterator::TaskVTreeIterator(const Task &task) : task_(task) {
@@ -460,4 +503,44 @@ const char *rank_string(Rank rank) {
     case Rank::k15D:
       return "15D";
   }
+}
+
+const char *task_type_string(TaskType type) {
+  switch (type) {
+    case TaskType::kUnknown:
+      return "Unknown";
+    case TaskType::kLifeAndDeath:
+      return "Life & Death";
+    case TaskType::kTesuji:
+      return "Tesuji";
+    case TaskType::kJoseki:
+      return "Joseki";
+    case TaskType::kOpening:
+      return "Opening";
+    case TaskType::kEndgame:
+      return "Endgame";
+    case TaskType::kAppreciation:
+      return "Appreciation";
+    case TaskType::kTrick:
+      return "Trick";
+    case TaskType::kMiddlegame:
+      return "Middlegame";
+    case TaskType::kMirror:
+      return "Mirror";
+    case TaskType::kTheory:
+      return "Theory";
+    case TaskType::kOpeningChoice:
+      return "Opening Choice";
+    case TaskType::kMiddlegameChoice:
+      return "Middlegame Choice";
+    case TaskType::kEndgameChoice:
+      return "Endgame Choice";
+    case TaskType::kLuoZi:
+      return "Pick";
+    case TaskType::kCapture:
+      return "Capture";
+    case TaskType::kCaptureRace:
+      return "Capturing Race";
+  }
+  return "?";
 }

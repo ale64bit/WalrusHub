@@ -5,6 +5,7 @@ A playground for weiqi tools and experimentation.
 ## Build instructions
 
 The hub is written in C++ and uses [meson](https://mesonbuild.com/) as build system.
+It depends on GTK4. See [here](https://www.gtk.org/docs/installations/#installations) for platform-specific installation instructions. On Linux and MacOS, it's usually available via your package manager.
 
 Steps:
 
