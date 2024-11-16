@@ -139,6 +139,10 @@ std::optional<Task> import_101weiqi_task(std::string_view data) {
     std::string ps = l["pt"];
     task.labels_[wq::Point(ps[1] - 'a', ps[0] - 'a')] = l["name"];
   }
+  for (const auto& l : e["signs"]) {
+    std::string ps = l;
+    task.labels_[wq::Point(ps[1] - 'a', ps[0] - 'a')] = "$triangle";
+  }
 
   return task;
 }

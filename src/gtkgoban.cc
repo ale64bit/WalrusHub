@@ -244,6 +244,17 @@ void GtkGoban::annotation_draw_function(GtkDrawingArea *, cairo_t *cr, int w,
       cairo_line_to(cr, w / 2.0, h);
       cairo_fill(cr);
       break;
+    case AnnotationType::kTriangle: {
+      const double R = (w / 2);
+      const double s = std::sqrt(3) * R;
+      const double a = 3 * R / 2;
+      gdk_cairo_set_source_rgba(cr, &annotation.color);
+      cairo_move_to(cr, R, 0);
+      cairo_line_to(cr, s + (w - s) / 2, a);
+      cairo_line_to(cr, (w - s) / 2, a);
+      cairo_fill(cr);
+      break;
+    }
   }
 }
 

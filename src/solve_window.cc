@@ -268,7 +268,11 @@ void SolveWindow::reset_task(bool is_solved) {
   }
   for (const auto& [p, label] : task_.labels_) {
     const auto& [r, c] = p;
-    goban_->set_text(r, c, label);
+    if (label == "$triangle") {
+      goban_->set_text(r, c, u8"▲");
+    } else {
+      goban_->set_text(r, c, label);
+    }
     goban_->set_text_color(r, c, color_blue);
   }
 

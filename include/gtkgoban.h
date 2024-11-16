@@ -15,6 +15,7 @@ enum class AnnotationType {
   kTerritory,
   kTopLeftTriangle,
   kBottomRightTriangle,
+  kTriangle,
 };
 
 struct AnnotationState {

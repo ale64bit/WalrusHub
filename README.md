@@ -22,7 +22,12 @@ $ meson wrap install sqlite3
 $ meson setup builddir
 ```
 
-3. Compile and run:
+3. Unzip the task database. For example, on *nix systems:
+```
+$ unzip assets/tasks.zip -d assets/
+```
+
+4. Compile and run:
 ```
 $ meson compile -C builddir
 $ ./builddir/WalrusHub
