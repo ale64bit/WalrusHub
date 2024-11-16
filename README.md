@@ -2,6 +2,8 @@
 
 A playground for weiqi tools and experimentation.
 
+![Alt text](doc/screenshot.png?raw=true "Screenshot")
+
 ## Build instructions
 
 The hub is written in C++ and uses [meson](https://mesonbuild.com/) as build system.
