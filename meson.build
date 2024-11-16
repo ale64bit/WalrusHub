@@ -25,6 +25,7 @@ exe = executable(
   sources: main_source,
   include_directories: include_dirs,
   install: true,
+  cpp_args: '-D_USE_MATH_DEFINES',
   dependencies: [
     dependency('gtk4'),
     dependency('libcurl'),
