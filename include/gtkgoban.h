@@ -74,10 +74,9 @@ class GtkGoban {
                                gpointer user_data);
   static void on_point_pressed(GtkGestureClick *self, gint n_press, gdouble x,
                                gdouble y, gpointer user_data);
-  static void on_point_enter(GtkGestureClick *self, gint n_press, gdouble x,
-                             gdouble y, gpointer user_data);
-  static void on_point_leave(GtkGestureClick *self, gint n_press, gdouble x,
-                             gdouble y, gpointer user_data);
+  static void on_point_enter(GtkGestureClick *self, gdouble x, gdouble y,
+                             gpointer user_data);
+  static void on_point_leave(GtkGestureClick *self, gpointer user_data);
 };
 
 #endif

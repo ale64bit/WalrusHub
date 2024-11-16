@@ -283,16 +283,13 @@ void GtkGoban::on_point_pressed(GtkGestureClick *, gint /*n_press*/,
   if (ptr->on_point_click_) ptr->on_point_click_(r, c);
 }
 
-void GtkGoban::on_point_enter(GtkGestureClick *, gint /*n_press*/,
-                              gdouble /*x*/, gdouble /*y*/,
+void GtkGoban::on_point_enter(GtkGestureClick *, gdouble /*x*/, gdouble /*y*/,
                               gpointer user_data) {
   const auto &[ptr, r, c] = *(std::tuple<GtkGoban *, int, int> *)user_data;
   if (ptr->on_point_enter_) ptr->on_point_enter_(r, c);
 }
 
-void GtkGoban::on_point_leave(GtkGestureClick *, gint /*n_press*/,
-                              gdouble /*x*/, gdouble /*y*/,
-                              gpointer user_data) {
+void GtkGoban::on_point_leave(GtkGestureClick *, gpointer user_data) {
   const auto &[ptr, r, c] = *(std::tuple<GtkGoban *, int, int> *)user_data;
   if (ptr->on_point_leave_) ptr->on_point_leave_(r, c);
 }
@@ -335,14 +332,14 @@ void GtkGoban::resize(int board_size, int r1, int c1, int r2, int c2) {
       point_coords_[i][j] = {this, row_offset_ + i, col_offset_ + j};
 
       auto click_ctrl = gtk_gesture_click_new();
-      g_signal_connect(click_ctrl, "pressed", G_CALLBACK(on_point_pressed),
-                       &point_coords_[i][j]);
+      g_signal_connect(GTK_GESTURE_CLICK(click_ctrl), "pressed",
+                       G_CALLBACK(on_point_pressed), &point_coords_[i][j]);
 
       auto motion_ctrl = gtk_event_controller_motion_new();
-      g_signal_connect(motion_ctrl, "enter", G_CALLBACK(on_point_enter),
-                       &point_coords_[i][j]);
-      g_signal_connect(motion_ctrl, "leave", G_CALLBACK(on_point_leave),
-                       &point_coords_[i][j]);
+      g_signal_connect(GTK_EVENT_CONTROLLER(motion_ctrl), "enter",
+                       G_CALLBACK(on_point_enter), &point_coords_[i][j]);
+      g_signal_connect(GTK_EVENT_CONTROLLER(motion_ctrl), "leave",
+                       G_CALLBACK(on_point_leave), &point_coords_[i][j]);
 
       auto stone_img = gtk_image_new();
       gtk_widget_set_hexpand(stone_img, true);
