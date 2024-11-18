@@ -7,6 +7,8 @@ main_source = files(
     'main_window.cc',
     'solve_preset_window.cc',
     'solve_window.cc',
+    'stats.cc',
+    'stats_window.cc',
     'task.cc',
     'task_import_101weiqi.cc',
     'walrushub.cc',

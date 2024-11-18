@@ -10,8 +10,12 @@
 
 namespace ui {
 
-SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset)
-    : Window(ctx), preset_(preset), task_ids_(ctx.tasks().get_tasks(preset)) {
+SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
+                         std::optional<std::pair<int, Rank>> tag_ref)
+    : Window(ctx),
+      preset_(preset),
+      tag_ref_(tag_ref),
+      task_ids_(ctx.tasks().get_tasks(preset)) {
   std::shuffle(task_ids_.begin(), task_ids_.end(), ctx_.rand());
   if (preset_.max_tasks_ > 0 && preset_.max_tasks_ < (int)task_ids_.size())
     task_ids_.resize(preset_.max_tasks_);
@@ -328,6 +332,8 @@ void SolveWindow::set_solve_result(AnswerType type) {
     task_result_ = type;
     ++task_count_;
     if (type == AnswerType::kWrong) ++error_count_;
+    ctx_.stats().update_rank_stats(task_.rank_, 1,
+                                   (type == AnswerType::kWrong ? 1 : 0));
 
     std::ostringstream ss;
 
@@ -341,14 +347,18 @@ void SolveWindow::set_solve_result(AnswerType type) {
 
     gtk_widget_set_sensitive(GTK_WIDGET(reset_button_), true);
 
-    if (task_count_ == preset_.max_tasks_ ||
-        error_count_ == preset_.max_errors_) {
+    if (task_count_ == preset_.max_tasks_) {
       session_complete_ = true;
       session_complete_dialog_ = gtk_alert_dialog_new("Session Complete");
       gtk_alert_dialog_set_modal(session_complete_dialog_, true);
       gtk_alert_dialog_choose(session_complete_dialog_, GTK_WINDOW(window_),
                               nullptr, on_session_complete, this);
       gtk_widget_set_visible(GTK_WIDGET(next_button_), false);
+      if (tag_ref_) {
+        const auto& [tag_id, rank] = *tag_ref_;
+        ctx_.stats().update_tag_stats(
+            tag_id, rank, 1, (error_count_ > preset_.max_errors_) ? 1 : 0);
+      }
     }
   }
 }

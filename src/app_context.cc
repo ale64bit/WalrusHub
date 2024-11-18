@@ -13,8 +13,12 @@ static GdkTexture *load_texture_from_file(const char *path) {
   return tex;
 }
 
-AppContext::AppContext(const char *task_db_path, RunFunc run_func)
-    : rand_gen_(rand_dev_()), run_func_(run_func), task_db_(task_db_path) {
+AppContext::AppContext(const char *task_db_path, const char *stats_db_path,
+                       RunFunc run_func)
+    : rand_gen_(rand_dev_()),
+      run_func_(run_func),
+      task_db_(task_db_path),
+      stats_db_(stats_db_path) {
   app_ = gtk_application_new("ru.walruswq.hub", G_APPLICATION_DEFAULT_FLAGS);
   g_signal_connect(app_, "activate", G_CALLBACK(activate), this);
 }

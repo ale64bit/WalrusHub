@@ -9,6 +9,8 @@ project_header_files += files(
     'main_window.h',
     'solve_preset_window.h',
     'solve_window.h',
+    'stats.h',
+    'stats_window.h',
     'task.h',
     'window.h',
 )

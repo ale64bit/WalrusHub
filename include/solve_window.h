@@ -19,11 +19,13 @@ namespace ui {
 
 class SolveWindow : public Window {
  public:
-  SolveWindow(AppContext& ctx, SolvePreset preset);
+  SolveWindow(AppContext& ctx, SolvePreset preset,
+              std::optional<std::pair<int, Rank>> tag_ref);
   ~SolveWindow();
 
  private:
   const SolvePreset preset_;
+  const std::optional<std::pair<int, Rank>> tag_ref_;
   std::vector<int64_t> task_ids_;
 
   // State

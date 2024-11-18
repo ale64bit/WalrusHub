@@ -8,13 +8,15 @@
 #include <vector>
 
 #include "http.h"
+#include "stats.h"
 #include "task.h"
 
 class AppContext {
   using RunFunc = std::function<void(AppContext &)>;
 
  public:
-  AppContext(const char *task_db_path, RunFunc run_func);
+  AppContext(const char *task_db_path, const char *stats_db_path,
+             RunFunc run_func);
   ~AppContext();
 
   int run(int argc, char **argv);
@@ -30,6 +32,7 @@ class AppContext {
   GtkMediaStream *capture_few_sound() const { return sound.capture_few; }
   GtkMediaStream *capture_many_sound() const { return sound.capture_many; }
   TaskDB &tasks() { return task_db_; }
+  StatsDB &stats() { return stats_db_; }
   Http &http() { return http_; }
   GtkApplication *gtk_app() { return app_; }
   std::mt19937 &rand() { return rand_gen_; }
@@ -41,6 +44,7 @@ class AppContext {
   GtkApplication *app_;
   Http http_;
   TaskDB task_db_;
+  StatsDB stats_db_;
   struct {
     GdkTexture *board_tex;
     std::vector<GdkTexture *> black_stone_tex;

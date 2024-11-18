@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "app_context.h"
@@ -13,8 +15,11 @@ class SolvePresetWindow : public Window {
   SolvePresetWindow(AppContext& ctx);
 
  private:
-  std::vector<SolvePreset> presets_;
+  std::vector<std::pair<SolvePreset, std::pair<int, Rank>>> presets_;
+  std::unordered_map<int, std::map<Rank, std::vector<GtkWidget*>>>
+      preset_buttons_;
 
+  void update_preset_buttons();
   static void on_preset_clicked(GtkWidget* self, gpointer data);
 };
 
