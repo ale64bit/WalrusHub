@@ -20,6 +20,9 @@ class SolvePresetWindow : public Window {
       preset_buttons_;
 
   void update_preset_buttons();
+  void update_time_challenge_button_label(
+      GtkWidget* button, int tag_id, Rank rank,
+      const std::map<Rank, std::pair<int, int>>& stats);
   static void on_preset_clicked(GtkWidget* self, gpointer data);
 };
 

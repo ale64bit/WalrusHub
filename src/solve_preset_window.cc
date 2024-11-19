@@ -639,6 +639,14 @@ const std::vector<std::pair<
         },
 };
 
+static std::string time_challenge_label(Rank rank, int total, int fails) {
+  std::ostringstream ss;
+  ss << "<span size=\"x-large\">" << rank_string(rank) << u8"</span>\n✓"
+     << (total - fails) << "\tx" << fails << "\n"
+     << 100 * (total - fails) / std::max(total, 1) << "%";
+  return ss.str();
+}
+
 SolvePresetWindow::SolvePresetWindow(AppContext& ctx) : Window(ctx) {
   gtk_window_set_title(GTK_WINDOW(window_), "Training");
   gtk_window_set_default_size(GTK_WINDOW(window_), 900, 550);
@@ -678,8 +686,10 @@ SolvePresetWindow::SolvePresetWindow(AppContext& ctx) : Window(ctx) {
       presets_.emplace_back(preset,
                             std::make_pair(kTimeChallengePreset, Rank(rank)));
 
-      GtkWidget* preset_button =
-          gtk_button_new_with_label(rank_string(Rank(rank)));
+      GtkWidget* preset_label = gtk_label_new("");
+      gtk_label_set_justify(GTK_LABEL(preset_label), GTK_JUSTIFY_CENTER);
+      GtkWidget* preset_button = gtk_button_new();
+      gtk_button_set_child(GTK_BUTTON(preset_button), preset_label);
       g_object_set_data(G_OBJECT(preset_button), "preset_index",
                         (gpointer)(presets_.size() - 1));
       g_signal_connect(preset_button, "clicked", G_CALLBACK(on_preset_clicked),
@@ -757,18 +767,42 @@ void SolvePresetWindow::update_preset_buttons() {
     bool first = true;
     for (const auto& [rank, buttons] : ranked_buttons) {
       if (first) {
-        for (GtkWidget* button : buttons)
+        for (GtkWidget* button : buttons) {
           gtk_widget_set_sensitive(GTK_WIDGET(button), true);
+          update_time_challenge_button_label(button, tag_id, rank,
+                                             tag_it->second);
+        }
         first = false;
         continue;
       }
       auto rank_it = tag_it->second.find((Rank)((int)rank - 1));
-      const bool sensitive = rank_it == tag_it->second.end() ||
-                             (rank_it->second.first > rank_it->second.second);
+      const auto& [total, fails] = rank_it != tag_it->second.end()
+                                       ? rank_it->second
+                                       : std::make_pair(0, 0);
+      const bool sensitive = rank_it == tag_it->second.end() || (total > fails);
       for (GtkWidget* button : buttons) {
         gtk_widget_set_sensitive(GTK_WIDGET(button), sensitive);
+        update_time_challenge_button_label(button, tag_id, rank,
+                                           tag_it->second);
       }
     }
+  }
+}
+
+void SolvePresetWindow::update_time_challenge_button_label(
+    GtkWidget* button, int tag_id, Rank rank,
+    const std::map<Rank, std::pair<int, int>>& stats) {
+  if (tag_id == kTimeChallengePreset) {
+    GtkWidget* label = gtk_button_get_child(GTK_BUTTON(button));
+    assert(label != nullptr);
+    int total = 0;
+    int fails = 0;
+    if (auto it = stats.find(rank); it != stats.end()) {
+      total = it->second.first;
+      fails = it->second.second;
+    }
+    gtk_label_set_markup(GTK_LABEL(label),
+                         time_challenge_label(rank, total, fails).c_str());
   }
 }
 
