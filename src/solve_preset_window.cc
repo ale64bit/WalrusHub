@@ -754,6 +754,11 @@ SolvePresetWindow::SolvePresetWindow(AppContext& ctx) : Window(ctx) {
 
   gtk_window_set_child(GTK_WINDOW(window_), box);
   gtk_window_present(GTK_WINDOW(window_));
+  window_groups_[kSolvePresetWindowGroup].insert(this);
+}
+
+SolvePresetWindow::~SolvePresetWindow() {
+  window_groups_[kSolvePresetWindowGroup].erase(this);
 }
 
 void SolvePresetWindow::update_preset_buttons() {

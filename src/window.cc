@@ -4,6 +4,8 @@
 
 namespace ui {
 
+std::unordered_map<std::string, std::set<Window*>> Window::window_groups_;
+
 Window::Window(AppContext& ctx)
     : ctx_(ctx), window_(gtk_application_window_new(ctx.gtk_app())) {
   g_signal_connect(GTK_WINDOW(window_), "destroy", G_CALLBACK(on_destroy),
