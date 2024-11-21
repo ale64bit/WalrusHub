@@ -79,7 +79,7 @@ std::optional<Task> import_101weiqi_task(std::string_view data) {
       }
       cur = cur->children_[p].get();
     }
-    if (!cur->answer_) {
+    if (cur->answer_.value_or(AnswerType::kWrong) == AnswerType::kWrong) {
       switch ((int)ans["ty"]) {
         case 1:
           cur->answer_ = AnswerType::kCorrect;
@@ -132,6 +132,11 @@ std::optional<Task> import_101weiqi_task(std::string_view data) {
         std::swap(p.first, p.second);
       }
     }
+  }
+
+  // Answer points (for choose tasks)
+  for (std::string ps : e["luozis"]) {
+    task.answer_points_.emplace_back(ps[1] - 'a', ps[0] - 'a');
   }
 
   // Labels

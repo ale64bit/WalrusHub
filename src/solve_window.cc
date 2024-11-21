@@ -91,63 +91,7 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
   gtk_window_set_child(GTK_WINDOW(window_), box);
   gtk_window_present(GTK_WINDOW(window_));
 
-  goban_->set_on_point_click([this](int r, int c) {
-    if (turn_ == wq::Color::kEmpty || turn_ != task_.first_to_play_) return;
-
-    auto prev_move = board_->last_move();
-    wq::PointList removed;
-    if (!board_->move(turn_, r, c, removed)) return;
-
-    GtkMediaStream* snd = ctx_.play_stone_sound();
-    if (removed.size() > 5)
-      snd = ctx_.capture_many_sound();
-    else if (removed.size() > 1)
-      snd = ctx_.capture_few_sound();
-    else if (removed.size() == 1)
-      snd = ctx_.capture_one_sound();
-    gtk_media_stream_set_volume(snd, 1.0);
-    gtk_media_stream_play(snd);
-
-    move_num_++;
-
-    if (prev_move) {
-      const auto& [pcol, pnt] = prev_move.value();
-      const auto& [pr, pc] = pnt;
-      goban_->set_annotation(pr, pc, AnnotationType::kNone);
-    }
-
-    goban_->set_point(r, c, turn_);
-    for (const auto& [rr, cc] : removed) {
-      goban_->set_point(rr, cc, wq::Color::kEmpty);
-      goban_->set_text_color(rr, cc, color_black);
-    }
-    goban_->set_text(r, c, std::to_string(move_num_));
-    goban_->set_text_color(
-        r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
-    goban_->set_annotation(r, c, AnnotationType::kTopLeftTriangle);
-    goban_->set_annotation_color(
-        r, c, turn_ == wq::Color::kBlack ? color_red : color_blue);
-
-    switch (turn_) {
-      case wq::Color::kBlack:
-        turn_ = wq::Color::kWhite;
-        break;
-      case wq::Color::kWhite:
-        turn_ = wq::Color::kBlack;
-        break;
-      case wq::Color::kEmpty:
-        break;
-    }
-
-    std::string comment;
-    if (auto ans_opt = solve_state_->move(wq::Point(r, c), comment)) {
-      set_solve_result(*ans_opt);
-      return;
-    }
-
-    opponent_move_source_ =
-        g_timeout_add_once(20, &SolveWindow::on_opponent_move, this);
-  });
+  goban_->set_on_point_click([this](int r, int c) { on_point_click(r, c); });
   goban_->set_on_point_enter([this](int r, int c) {
     if (board_->at(r, c) != wq::Color::kEmpty) return;
     switch (turn_) {
@@ -178,6 +122,92 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
 
 SolveWindow::~SolveWindow() {
   if (timer_source_) g_source_remove(timer_source_);
+}
+
+void SolveWindow::on_point_click(int r, int c) {
+  if (task_.type_ == TaskType::kLuoZi)
+    on_point_click_choose_task(r, c);
+  else
+    on_point_click_normal_task(r, c);
+}
+
+void SolveWindow::on_point_click_normal_task(int r, int c) {
+  if (turn_ == wq::Color::kEmpty || turn_ != task_.first_to_play_) return;
+
+  auto prev_move = board_->last_move();
+  wq::PointList removed;
+  if (!board_->move(turn_, r, c, removed)) return;
+
+  GtkMediaStream* snd = ctx_.play_stone_sound();
+  if (removed.size() > 5)
+    snd = ctx_.capture_many_sound();
+  else if (removed.size() > 1)
+    snd = ctx_.capture_few_sound();
+  else if (removed.size() == 1)
+    snd = ctx_.capture_one_sound();
+  gtk_media_stream_set_volume(snd, 1.0);
+  gtk_media_stream_play(snd);
+
+  move_num_++;
+
+  if (prev_move) {
+    const auto& [pcol, pnt] = prev_move.value();
+    const auto& [pr, pc] = pnt;
+    goban_->set_annotation(pr, pc, AnnotationType::kNone);
+  }
+
+  goban_->set_point(r, c, turn_);
+  for (const auto& [rr, cc] : removed) {
+    goban_->set_point(rr, cc, wq::Color::kEmpty);
+    goban_->set_text_color(rr, cc, color_black);
+  }
+  goban_->set_text(r, c, std::to_string(move_num_));
+  goban_->set_text_color(
+      r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
+  goban_->set_annotation(r, c, AnnotationType::kTopLeftTriangle);
+  goban_->set_annotation_color(
+      r, c, turn_ == wq::Color::kBlack ? color_red : color_blue);
+
+  switch (turn_) {
+    case wq::Color::kBlack:
+      turn_ = wq::Color::kWhite;
+      break;
+    case wq::Color::kWhite:
+      turn_ = wq::Color::kBlack;
+      break;
+    case wq::Color::kEmpty:
+      break;
+  }
+
+  std::string comment;
+  if (auto ans_opt = solve_state_->move(wq::Point(r, c), comment)) {
+    set_solve_result(*ans_opt);
+    return;
+  }
+
+  opponent_move_source_ =
+      g_timeout_add_once(20, &SolveWindow::on_opponent_move, this);
+}
+
+void SolveWindow::on_point_click_choose_task(int r, int c) {
+  if (pending_answer_points_.empty()) return;
+  const wq::Point p(r, c);
+  auto it = pending_answer_points_.find(p);
+  if (it == pending_answer_points_.end()) {
+    goban_->set_text(r, c, u8"⬤");
+    goban_->set_text_color(r, c, color_red);
+    for (const auto& [rr, cc] : pending_answer_points_) {
+      goban_->set_text(rr, cc, u8"⬤");
+      goban_->set_text_color(rr, cc, color_green);
+    }
+    pending_answer_points_.clear();
+    set_solve_result(AnswerType::kWrong);
+  } else {
+    goban_->set_text(r, c, u8"⬤");
+    goban_->set_text_color(r, c, color_blue);
+    pending_answer_points_.erase(it);
+    if (pending_answer_points_.empty()) set_solve_result(AnswerType::kCorrect);
+  }
 }
 
 void SolveWindow::on_reset_clicked(GtkWidget* /*self*/, gpointer data) {
@@ -255,6 +285,8 @@ void SolveWindow::load_task(int64_t task_id) {
 
 void SolveWindow::reset_task(bool is_solved) {
   solve_state_ = std::make_unique<TaskVTreeIterator>(task_);
+  pending_answer_points_ = std::set<wq::Point>(task_.answer_points_.begin(),
+                                               task_.answer_points_.end());
   move_num_ = 0;
   turn_ = task_.first_to_play_;
 

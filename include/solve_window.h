@@ -37,6 +37,7 @@ class SolveWindow : public Window {
   int time_left_ = 0;
   wq::Color turn_ = wq::Color::kEmpty;
   std::unique_ptr<TaskVTreeIterator> solve_state_;
+  std::set<wq::Point> pending_answer_points_;
   std::unique_ptr<wq::Board> board_;
   std::optional<AnswerType> task_result_;
   bool session_complete_ = false;
@@ -60,6 +61,9 @@ class SolveWindow : public Window {
   void reset_task(bool is_solved);
   void set_solve_result(AnswerType type);
   void set_time_left_label(int t);
+  void on_point_click(int r, int c);
+  void on_point_click_normal_task(int r, int c);
+  void on_point_click_choose_task(int r, int c);
 
   static void on_opponent_move(gpointer data);
   static void on_reset_clicked(GtkWidget* widget, gpointer data);
