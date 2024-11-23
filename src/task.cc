@@ -352,10 +352,10 @@ json TaskDB::encode_point_list(const wq::PointList &pl) {
 }
 
 json TaskDB::encode_task_initial_stones(const Task &task) {
-  return {
+  return json::array({
       encode_point_list(task.initial_[0]),
       encode_point_list(task.initial_[1]),
-  };
+  });
 }
 
 json TaskDB::encode_task_answer_points(const Task &task) {
