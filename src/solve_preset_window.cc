@@ -134,7 +134,7 @@ const std::vector<std::pair<
                 {{"紧气", "Reduce liberties"}, 12, Rank::k15K, Rank::k2D},  //
                 {{"使对方不入", "Prevent opponent from approaching"},
                  227,
-                 Rank::k15K,
+                 Rank::k11K,
                  Rank::k2D},                                                  //
                 {{"延气", "Increase liberties"}, 13, Rank::k12K, Rank::k4D},  //
                 {{"黄莺扑蝶", "The oriole captures the butterfly"},
