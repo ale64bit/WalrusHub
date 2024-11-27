@@ -74,6 +74,9 @@ bool Board::move(Color col, int r, int c, PointList &removed) {
       cap_groups[(int)state_[nr][nc] - 1].emplace_back(nr, nc);
     }
   }
+  if (tag_[r][c] < traversal_tag_ && !has_liberties(r, c)) {
+    cap_groups[(int)col - 1].emplace_back(r, c);
+  }
 
   // Check suicide
   const bool is_opp_capture = !cap_groups[(int)opp - 1].empty();
