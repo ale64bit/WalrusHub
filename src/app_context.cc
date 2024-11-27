@@ -33,6 +33,7 @@ void AppContext::activate(GtkApplication * /*gtkApp*/, gpointer user_data) {
   AppContext *app_ctx = (AppContext *)user_data;
 
   // Load textures
+  app_ctx->res.logo = load_texture_from_file("assets/walruswq_logo.png");
   app_ctx->res.board_tex = load_texture_from_file("assets/board.png");
   app_ctx->res.black_stone_tex.push_back(
       load_texture_from_file("assets/stone_black.png"));

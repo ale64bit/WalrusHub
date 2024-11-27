@@ -13,6 +13,7 @@ class MainWindow : public Window {
   static void on_editor_clicked(GtkWidget* widget, gpointer data);
   static void on_solve_clicked(GtkWidget* widget, gpointer data);
   static void on_stats_clicked(GtkWidget* widget, gpointer data);
+  static void on_about_clicked(GtkWidget* widget, gpointer data);
 };
 
 }  // namespace ui

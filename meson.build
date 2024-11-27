@@ -22,6 +22,7 @@ subdir('src')
 
 exe = executable(
   'WalrusHub',
+  vcs_dep,
   sources: main_source,
   include_directories: include_dirs,
   install: true,

@@ -20,6 +20,7 @@ class AppContext {
   ~AppContext();
 
   int run(int argc, char **argv);
+  GdkTexture *logo() const { return res.logo; }
   GdkTexture *board_texture() const { return res.board_tex; }
   const std::vector<GdkTexture *> &black_stone_textures() const {
     return res.black_stone_tex;
@@ -46,6 +47,7 @@ class AppContext {
   TaskDB task_db_;
   StatsDB stats_db_;
   struct {
+    GdkTexture *logo;
     GdkTexture *board_tex;
     std::vector<GdkTexture *> black_stone_tex;
     std::vector<GdkTexture *> white_stone_tex;

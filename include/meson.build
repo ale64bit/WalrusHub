@@ -14,3 +14,9 @@ project_header_files += files(
     'task.h',
     'window.h',
 )
+
+vcs_dep = vcs_tag(
+    input: 'git_version.h.in',
+    output: 'git_version.h',
+    replace_string: '@GIT_VERSION@',
+)
