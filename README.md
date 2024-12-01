@@ -2,8 +2,6 @@
 
 A playground for weiqi tools and experimentation.
 
-![Alt text](doc/screenshot.png?raw=true "Screenshot")
-
 ## Build instructions
 
 The hub is written in C++ and uses [meson](https://mesonbuild.com/) as build system.
@@ -34,3 +32,16 @@ $ unzip assets/tasks.zip -d assets/
 $ meson compile -C builddir
 $ ./builddir/WalrusHub
 ```
+
+## Screenshots
+
+### Editor
+![Alt text](doc/editor_screenshot.png?raw=true "Editor")
+### Play against KataGo human-like AI
+![Alt text](doc/play_ai_screenshot.png?raw=true "Play against KataGo")
+### Solve 101weiqi tasks in time-challenge (a.k.a. guan) mode
+![Alt text](doc/time_challenge_screenshot.png?raw=true "Time challenge solving")
+### Solve 101weiqi tasks in training mode
+![Alt text](doc/training_screenshot.png?raw=true "Training")
+### Keep track of your solve stats
+![Alt text](doc/stats_screenshot.png?raw=true "Statistics")
