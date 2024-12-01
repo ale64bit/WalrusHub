@@ -184,7 +184,7 @@ const std::vector<std::pair<
                 {{"直三", "Straight three"}, 122, Rank::k15K, Rank::k9K},   //
                 {{"弯三", "Bent three"}, 123, Rank::k15K, Rank::k8K},       //
                 {{"丁四", "Pyramid four"}, 70, Rank::k15K, Rank::k9K},      //
-                {{"刀把五", "Bulky four"}, 125, Rank::k14K, Rank::k7K},     //
+                {{"刀把五", "Bulky five"}, 125, Rank::k14K, Rank::k7K},     //
                 {{"梅花五", "Crossed five"}, 126, Rank::k15K, Rank::k13K},  //
                 {{"葡萄六", "Flower six"}, 127, Rank::k14K, Rank::k8K},     //
                 {{"一步做眼", "Make eye in one move"},
