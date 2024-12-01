@@ -2,7 +2,8 @@
 
 #include <gtk/gtk.h>
 
-#include <vector>
+#include <memory>
+#include <optional>
 
 #include "app_context.h"
 #include "board.h"
@@ -20,7 +21,7 @@ class EditorWindow : public Window {
   wq::Color turn_ = wq::Color::kBlack;
   std::unique_ptr<wq::Board> board_;
   size_t cur_move_ = 0;
-  std::vector<wq::Move> moves_;
+  wq::MoveList moves_;
 
   // Widgets
   std::unique_ptr<GtkGoban> goban_;

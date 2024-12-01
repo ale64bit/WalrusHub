@@ -1,0 +1,15 @@
+.eval_bar block.filled {
+    background-color: black;
+    border-color: grey;
+    border-radius: 0%;
+}
+
+.eval_bar block.empty {
+    background-color: whitesmoke;
+    border-color: grey;
+    border-radius: 0%;
+}
+
+.eval_bar_separator {
+    background-color: red;
+}

@@ -17,11 +17,14 @@ enum class Color {
 };
 
 const char *ColorString(Color col);
+const char *ColorShortString(Color col);
 
 using Point = std::pair<int, int>;
 using PointList = std::vector<Point>;
 using Move = std::pair<Color, Point>;
 using MoveList = std::vector<Move>;
+
+constexpr Point kPass{-1, -1};
 
 class Board {
  public:

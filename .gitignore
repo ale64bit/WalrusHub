@@ -37,3 +37,6 @@
 # meson
 builddir
 subprojects
+
+# KataGo
+analysis_logs

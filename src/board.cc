@@ -33,6 +33,17 @@ const char *ColorString(Color col) {
   }
 }
 
+const char *ColorShortString(Color col) {
+  switch (col) {
+    case Color::kEmpty:
+      return "-";
+    case Color::kBlack:
+      return "B";
+    case Color::kWhite:
+      return "W";
+  }
+}
+
 Board::Board(int row_count, int col_count)
     : row_count_(row_count),
       col_count_(col_count),

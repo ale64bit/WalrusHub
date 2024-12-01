@@ -2,14 +2,18 @@
 
 #include <gtk/gtk.h>
 
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <random>
 #include <vector>
 
 #include "http.h"
+#include "katago_client.h"
 #include "stats.h"
 #include "task.h"
+
+namespace fs = std::filesystem;
 
 class AppContext {
   using RunFunc = std::function<void(AppContext &)>;
@@ -37,15 +41,31 @@ class AppContext {
   Http &http() { return http_; }
   GtkApplication *gtk_app() { return app_; }
   std::mt19937 &rand() { return rand_gen_; }
+  void reload_katago();
+  KataGoClient *katago() { return katago_client_.get(); }
+
+  // Config
+  void set_katago_path(fs::path p);
+  gchar *get_katago_path() const;
+  void set_katago_config_path(fs::path p);
+  gchar *get_katago_config_path() const;
+  void set_katago_model_path(fs::path p);
+  gchar *get_katago_model_path() const;
+  void set_katago_human_model_path(fs::path p);
+  gchar *get_katago_human_model_path() const;
+  void flush_config();
 
  private:
   std::random_device rand_dev_;
   std::mt19937 rand_gen_;
   RunFunc run_func_;
   GtkApplication *app_;
+  fs::path config_filename_;
+  GKeyFile *config_key_file_;
   Http http_;
   TaskDB task_db_;
   StatsDB stats_db_;
+  std::unique_ptr<KataGoClient> katago_client_;
   struct {
     GdkTexture *logo;
     GdkTexture *board_tex;
