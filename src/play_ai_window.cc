@@ -20,6 +20,11 @@ static const char* style_string(PlayAIWindow::PlayStyle style) {
   return "?";
 }
 
+static int max_visits_for_rank(Rank rank) {
+  if (rank < Rank::k5D) return 1;
+  return 3 * ((int)rank - int(Rank::k4D));
+}
+
 PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank)
     : Window(ctx) {
   std::ostringstream title;
@@ -121,7 +126,7 @@ PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank)
   katago_query_.komi = 7.5;
   katago_query_.board_size_rows = 19;
   katago_query_.board_size_cols = 19;
-  katago_query_.max_visits = 40;
+  katago_query_.max_visits = max_visits_for_rank(rank);
   katago_query_.include_policy = true;
   katago_query_.override_settings = {
       {"humanSLProfile", human_profile},
@@ -277,7 +282,7 @@ void PlayAIWindow::gen_move() {
         const int move_index = dist(ctx_.rand());
         auto prev_move = board_->last_move();
 
-        if (move_index == 19 * 19) {  // pass
+        if (move_index == resp.human_policy.size() - 1) {  // pass
           cur_move_++;
           moves_.push_back(wq::Move(turn_, wq::kPass));
 
