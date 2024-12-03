@@ -176,7 +176,7 @@ void PlayAIWindow::on_point_click(int r, int c) {
 
   goban_->set_point(r, c, turn_);
   for (const auto& [rr, cc] : removed)
-    goban_->set_point(rr, cc, wq::Color::kEmpty);
+    goban_->set_point(rr, cc, wq::Color::kNone);
   if (is_variation) {
     goban_->set_annotation(r, c, AnnotationType::kTopLeftTriangle);
     goban_->set_annotation_color(
@@ -208,7 +208,7 @@ void PlayAIWindow::on_point_click(int r, int c) {
 
 void PlayAIWindow::on_point_enter(int r, int c) {
   if (state_ == State::kCounting) return;
-  if (board_->at(r, c) != wq::Color::kEmpty) return;
+  if (board_->at(r, c) != wq::Color::kNone) return;
   switch (turn_) {
     case wq::Color::kBlack:
       goban_->set_annotation_color(r, c, color_black);
@@ -216,7 +216,7 @@ void PlayAIWindow::on_point_enter(int r, int c) {
     case wq::Color::kWhite:
       goban_->set_annotation_color(r, c, color_white);
       break;
-    case wq::Color::kEmpty:
+    case wq::Color::kNone:
       break;
   }
   goban_->set_annotation(r, c, AnnotationType::kTerritory);
@@ -224,7 +224,7 @@ void PlayAIWindow::on_point_enter(int r, int c) {
 
 void PlayAIWindow::on_point_leave(int r, int c) {
   if (state_ == State::kCounting) return;
-  if (board_->at(r, c) != wq::Color::kEmpty) return;
+  if (board_->at(r, c) != wq::Color::kNone) return;
   goban_->set_annotation(r, c, AnnotationType::kNone);
 }
 
@@ -248,7 +248,7 @@ void PlayAIWindow::on_pass() {
 
   consecutive_pass_++;
   if (state_ == State::kPlaying && consecutive_pass_ == 2)
-    finish_game(wq::Color::kEmpty, 0);
+    finish_game(wq::Color::kNone, 0);
 
   switch (state_) {
     case State::kPlaying:
@@ -310,7 +310,7 @@ void PlayAIWindow::gen_move() {
 
           goban_->set_point(r, c, turn_);
           for (const auto& [rr, cc] : removed)
-            goban_->set_point(rr, cc, wq::Color::kEmpty);
+            goban_->set_point(rr, cc, wq::Color::kNone);
           goban_->set_annotation(r, c, AnnotationType::kBottomRightTriangle);
           goban_->set_annotation_color(
               r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
@@ -318,13 +318,13 @@ void PlayAIWindow::gen_move() {
 
         toggle_turn();
 
-        if (consecutive_pass_ == 2) finish_game(wq::Color::kEmpty, 0);
+        if (consecutive_pass_ == 2) finish_game(wq::Color::kNone, 0);
       });
 }
 
 void PlayAIWindow::toggle_turn() {
   switch (turn_) {
-    case wq::Color::kEmpty:
+    case wq::Color::kNone:
       break;
     case wq::Color::kBlack:
       turn_ = wq::Color::kWhite;
@@ -348,7 +348,7 @@ bool PlayAIWindow::goto_prev_move() {
   }
 
   goban_->set_annotation(r, c, AnnotationType::kNone);
-  goban_->set_point(r, c, wq::Color::kEmpty);
+  goban_->set_point(r, c, wq::Color::kNone);
   for (const auto& [rr, cc] : added) {
     goban_->set_point(rr, cc, turn_);
   }
@@ -394,7 +394,7 @@ bool PlayAIWindow::goto_next_move() {
 
   goban_->set_point(r, c, turn_);
   for (const auto& [rr, cc] : removed)
-    goban_->set_point(rr, cc, wq::Color::kEmpty);
+    goban_->set_point(rr, cc, wq::Color::kNone);
   goban_->set_annotation(r, c, AnnotationType::kBottomRightTriangle);
   goban_->set_annotation_color(
       r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
@@ -428,7 +428,7 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
   katago_query_.override_settings = json::object();
 
   // If there's no winner, we need to count first.
-  if (winner == wq::Color::kEmpty) {
+  if (winner == wq::Color::kNone) {
     state_ = State::kCounting;
     if (!last_query_id_.empty()) ctx_.katago()->cancel_query(last_query_id_);
     katago_query_.include_ownership = true;
@@ -451,7 +451,7 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
               const double t = resp.ownership[i * 19 + j];
               if (t > 0.9) {
                 switch (board_->at(i, j)) {
-                  case wq::Color::kEmpty:
+                  case wq::Color::kNone:
                     goban_->set_annotation(i, j, AnnotationType::kTerritory);
                     goban_->set_annotation_color(i, j, color_black);
                     break;
@@ -465,7 +465,7 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
                 }
               } else if (t < -0.9) {
                 switch (board_->at(i, j)) {
-                  case wq::Color::kEmpty:
+                  case wq::Color::kNone:
                     goban_->set_annotation(i, j, AnnotationType::kTerritory);
                     goban_->set_annotation_color(i, j, color_white);
                     break;
@@ -490,7 +490,7 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
 
   std::ostringstream game_res;
   switch (winner) {
-    case wq::Color::kEmpty:
+    case wq::Color::kNone:
       game_res << "Draw";
       break;
     default:
@@ -545,7 +545,7 @@ void PlayAIWindow::on_resign_clicked(GtkWidget* /*self*/, gpointer user_data) {
 void PlayAIWindow::on_autocount_clicked(GtkWidget* /*self*/,
                                         gpointer user_data) {
   PlayAIWindow* win = (PlayAIWindow*)user_data;
-  win->finish_game(wq::Color::kEmpty, 0);
+  win->finish_game(wq::Color::kNone, 0);
 }
 
 void PlayAIWindow::on_first_move_clicked(GtkWidget* /*self*/,

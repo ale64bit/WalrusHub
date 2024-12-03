@@ -24,7 +24,7 @@ static Color fast_inv(Color col) {
 
 const char *ColorString(Color col) {
   switch (col) {
-    case Color::kEmpty:
+    case Color::kNone:
       return "none";
     case Color::kBlack:
       return "black";
@@ -35,7 +35,7 @@ const char *ColorString(Color col) {
 
 const char *ColorShortString(Color col) {
   switch (col) {
-    case Color::kEmpty:
+    case Color::kNone:
       return "-";
     case Color::kBlack:
       return "B";
@@ -47,7 +47,7 @@ const char *ColorShortString(Color col) {
 Board::Board(int row_count, int col_count)
     : row_count_(row_count),
       col_count_(col_count),
-      state_(row_count, std::vector<Color>(col_count, Color::kEmpty)),
+      state_(row_count, std::vector<Color>(col_count, Color::kNone)),
       tag_(row_count, std::vector<uint64_t>(col_count, 0)) {}
 
 int Board::row_count() const { return row_count_; }
@@ -66,7 +66,7 @@ bool Board::move(Color col, int r, int c, PointList &removed) {
   if (!inside(r, c)) return false;
 
   // Check if point is empty
-  if (state_[r][c] != Color::kEmpty) return false;
+  if (state_[r][c] != Color::kNone) return false;
 
   // Add the new stone
   state_[r][c] = col;
@@ -80,7 +80,7 @@ bool Board::move(Color col, int r, int c, PointList &removed) {
     const int nc = c + dc;
     if (!inside(nr, nc)) continue;
 
-    if (tag_[nr][nc] < traversal_tag_ && state_[nr][nc] != Color::kEmpty &&
+    if (tag_[nr][nc] < traversal_tag_ && state_[nr][nc] != Color::kNone &&
         !has_liberties(nr, nc)) {
       cap_groups[(int)state_[nr][nc] - 1].emplace_back(nr, nc);
     }
@@ -93,7 +93,7 @@ bool Board::move(Color col, int r, int c, PointList &removed) {
   const bool is_opp_capture = !cap_groups[(int)opp - 1].empty();
   const bool is_self_capture = !cap_groups[(int)col - 1].empty();
   if (is_self_capture && !is_opp_capture) {
-    state_[r][c] = Color::kEmpty;
+    state_[r][c] = Color::kNone;
     return false;
   }
 
@@ -106,7 +106,7 @@ bool Board::move(Color col, int r, int c, PointList &removed) {
     }
   }
   if (prev_hash_.find(new_hash) != prev_hash_.end()) {
-    state_[r][c] = Color::kEmpty;
+    state_[r][c] = Color::kNone;
     return false;
   }
 
@@ -134,7 +134,7 @@ bool Board::undo(int &r_out, int &c_out, PointList &added) {
 
   prev_hash_.erase(cur_hash_);
   cur_hash_ ^= kZobrist[r][c][(int)col - 1];
-  state_[r][c] = Color::kEmpty;
+  state_[r][c] = Color::kNone;
   for (const auto &[ri, ci] : prev_removed_.top()) {
     cur_hash_ ^= kZobrist[ri][ci][(int)opp - 1];
     state_[ri][ci] = opp;
@@ -161,7 +161,7 @@ bool Board::has_liberties(int r, int c) {
     const int nr = r + dr;
     const int nc = c + dc;
     if (!inside(nr, nc)) continue;
-    if (state_[nr][nc] == Color::kEmpty)
+    if (state_[nr][nc] == Color::kNone)
       ret = true;
     else if (state_[nr][nc] == state_[r][c] && tag_[nr][nc] < traversal_tag_)
       ret |= has_liberties(nr, nc);
@@ -185,7 +185,7 @@ uint64_t Board::hash_group(wq::Color col, int r, int c) {
 
 void Board::remove_group(int r, int c, PointList &removed) {
   Color ref_col = state_[r][c];
-  state_[r][c] = Color::kEmpty;
+  state_[r][c] = Color::kNone;
   for (const auto &[dr, dc] : kDelta) {
     const int nr = r + dr;
     const int nc = c + dc;

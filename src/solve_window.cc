@@ -93,7 +93,7 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
 
   goban_->set_on_point_click([this](int r, int c) { on_point_click(r, c); });
   goban_->set_on_point_enter([this](int r, int c) {
-    if (board_->at(r, c) != wq::Color::kEmpty) return;
+    if (board_->at(r, c) != wq::Color::kNone) return;
     switch (turn_) {
       case wq::Color::kBlack:
         goban_->set_annotation_color(r, c, color_black);
@@ -101,13 +101,13 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
       case wq::Color::kWhite:
         goban_->set_annotation_color(r, c, color_white);
         break;
-      case wq::Color::kEmpty:
+      case wq::Color::kNone:
         break;
     }
     goban_->set_annotation(r, c, AnnotationType::kTerritory);
   });
   goban_->set_on_point_leave([this](int r, int c) {
-    if (board_->at(r, c) != wq::Color::kEmpty) return;
+    if (board_->at(r, c) != wq::Color::kNone) return;
     goban_->set_annotation(r, c, AnnotationType::kNone);
   });
 
@@ -132,7 +132,7 @@ void SolveWindow::on_point_click(int r, int c) {
 }
 
 void SolveWindow::on_point_click_normal_task(int r, int c) {
-  if (turn_ == wq::Color::kEmpty || turn_ != task_.first_to_play_) return;
+  if (turn_ == wq::Color::kNone || turn_ != task_.first_to_play_) return;
 
   auto prev_move = board_->last_move();
   wq::PointList removed;
@@ -158,7 +158,7 @@ void SolveWindow::on_point_click_normal_task(int r, int c) {
 
   goban_->set_point(r, c, turn_);
   for (const auto& [rr, cc] : removed) {
-    goban_->set_point(rr, cc, wq::Color::kEmpty);
+    goban_->set_point(rr, cc, wq::Color::kNone);
     goban_->set_text_color(rr, cc, color_black);
   }
   goban_->set_text(r, c, std::to_string(move_num_));
@@ -175,7 +175,7 @@ void SolveWindow::on_point_click_normal_task(int r, int c) {
     case wq::Color::kWhite:
       turn_ = wq::Color::kBlack;
       break;
-    case wq::Color::kEmpty:
+    case wq::Color::kNone:
       break;
   }
 
@@ -245,7 +245,7 @@ void SolveWindow::on_opponent_move(gpointer data) {
 
   win->goban_->set_point(r, c, win->turn_);
   for (const auto& [rr, cc] : removed) {
-    win->goban_->set_point(rr, cc, wq::Color::kEmpty);
+    win->goban_->set_point(rr, cc, wq::Color::kNone);
     win->goban_->set_text_color(rr, cc, color_black);
   }
   win->goban_->set_text(r, c, std::to_string(win->move_num_));
@@ -268,7 +268,7 @@ void SolveWindow::on_opponent_move(gpointer data) {
     case wq::Color::kWhite:
       win->turn_ = wq::Color::kBlack;
       break;
-    case wq::Color::kEmpty:
+    case wq::Color::kNone:
       break;
   }
 }
@@ -327,7 +327,7 @@ void SolveWindow::reset_task(bool is_solved) {
   gtk_label_set_text(GTK_LABEL(rank_label_), "Rank: ?");
   std::string prompt;
   switch (task_.first_to_play_) {
-    case wq::Color::kEmpty:
+    case wq::Color::kNone:
       break;
     case wq::Color::kBlack:
       prompt = "Black to play";

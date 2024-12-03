@@ -96,7 +96,7 @@ void GtkGoban::set_point(int r, int c, wq::Color col) {
   auto overlay = (GtkOverlay *)gtk_grid_get_child_at(grid_, c, r);
   auto img = (GtkImage *)gtk_overlay_get_child(overlay);
   switch (col) {
-    case wq::Color::kEmpty:
+    case wq::Color::kNone:
       gtk_image_clear(img);
       break;
     case wq::Color::kBlack: {
@@ -384,7 +384,7 @@ void GtkGoban::clear() {
     for (int j = 0; j < board_size_; ++j) {
       const int ii = row_offset_ + i;
       const int jj = col_offset_ + j;
-      set_point(ii, jj, wq::Color::kEmpty);
+      set_point(ii, jj, wq::Color::kNone);
       set_text(ii, jj, "");
       set_annotation(ii, jj, AnnotationType::kNone);
     }

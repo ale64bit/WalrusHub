@@ -11,7 +11,7 @@
 namespace wq {
 
 enum class Color {
-  kEmpty = 0,
+  kNone = 0,
   kBlack = 1,
   kWhite = 2,
 };

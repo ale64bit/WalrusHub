@@ -35,7 +35,7 @@ class SolveWindow : public Window {
   Task task_;
   int move_num_ = 0;
   int time_left_ = 0;
-  wq::Color turn_ = wq::Color::kEmpty;
+  wq::Color turn_ = wq::Color::kNone;
   std::unique_ptr<TaskVTreeIterator> solve_state_;
   std::set<wq::Point> pending_answer_points_;
   std::unique_ptr<wq::Board> board_;

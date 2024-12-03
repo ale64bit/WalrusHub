@@ -32,7 +32,7 @@ class PlayAIWindow : public Window {
  private:
   // State
   State state_ = State::kPlaying;
-  wq::Color my_color_ = wq::Color::kEmpty;
+  wq::Color my_color_ = wq::Color::kNone;
   wq::Color turn_ = wq::Color::kBlack;
   std::unique_ptr<wq::Board> board_;
   size_t cur_move_ = 0;

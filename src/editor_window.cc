@@ -104,7 +104,7 @@ EditorWindow::EditorWindow(AppContext& ctx) : Window(ctx) {
 
     goban_->set_point(r, c, turn_);
     for (const auto& [rr, cc] : removed)
-      goban_->set_point(rr, cc, wq::Color::kEmpty);
+      goban_->set_point(rr, cc, wq::Color::kNone);
     goban_->set_annotation(r, c, AnnotationType::kBottomRightTriangle);
     goban_->set_annotation_color(
         r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
@@ -112,7 +112,7 @@ EditorWindow::EditorWindow(AppContext& ctx) : Window(ctx) {
     toggle_turn();
   });
   goban_->set_on_point_enter([this](int r, int c) {
-    if (board_->at(r, c) != wq::Color::kEmpty) return;
+    if (board_->at(r, c) != wq::Color::kNone) return;
     switch (turn_) {
       case wq::Color::kBlack:
         goban_->set_annotation_color(r, c, color_black);
@@ -120,20 +120,20 @@ EditorWindow::EditorWindow(AppContext& ctx) : Window(ctx) {
       case wq::Color::kWhite:
         goban_->set_annotation_color(r, c, color_white);
         break;
-      case wq::Color::kEmpty:
+      case wq::Color::kNone:
         break;
     }
     goban_->set_annotation(r, c, AnnotationType::kTerritory);
   });
   goban_->set_on_point_leave([this](int r, int c) {
-    if (board_->at(r, c) != wq::Color::kEmpty) return;
+    if (board_->at(r, c) != wq::Color::kNone) return;
     goban_->set_annotation(r, c, AnnotationType::kNone);
   });
 }
 
 void EditorWindow::toggle_turn() {
   switch (turn_) {
-    case wq::Color::kEmpty:
+    case wq::Color::kNone:
       break;
     case wq::Color::kBlack:
       turn_ = wq::Color::kWhite;
@@ -152,7 +152,7 @@ bool EditorWindow::goto_prev_move() {
   cur_move_--;
 
   goban_->set_annotation(r, c, AnnotationType::kNone);
-  goban_->set_point(r, c, wq::Color::kEmpty);
+  goban_->set_point(r, c, wq::Color::kNone);
   for (const auto& [rr, cc] : added) {
     goban_->set_point(rr, cc, turn_);
   }
@@ -199,7 +199,7 @@ bool EditorWindow::goto_next_move() {
 
   goban_->set_point(r, c, turn_);
   for (const auto& [rr, cc] : removed)
-    goban_->set_point(rr, cc, wq::Color::kEmpty);
+    goban_->set_point(rr, cc, wq::Color::kNone);
   goban_->set_annotation(r, c, AnnotationType::kBottomRightTriangle);
   goban_->set_annotation_color(
       r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
