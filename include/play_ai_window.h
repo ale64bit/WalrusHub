@@ -49,9 +49,11 @@ class PlayAIWindow : public GameWindow {
   GtkWidget* top_center_box_;
   GtkWidget* navigation_bar_;
   GtkEvalBar eval_bar_;
+  GtkWidget* show_ai_variation_button_;
 
   // Analysis
   KataGoClient::Query katago_query_;
+  KataGoClient::Response katago_last_resp_;
 
   void on_pass();
   void gen_move();
@@ -61,6 +63,7 @@ class PlayAIWindow : public GameWindow {
   static void on_pass_clicked(GtkWidget* self, gpointer user_data);
   static void on_resign_clicked(GtkWidget* self, gpointer user_data);
   static void on_autocount_clicked(GtkWidget* self, gpointer user_data);
+  static void on_show_ai_variation_clicked(GtkWidget* self, gpointer user_data);
   static void on_show_game_result(GObject* src, GAsyncResult* res,
                                   gpointer user_data);
 };

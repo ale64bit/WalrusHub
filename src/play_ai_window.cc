@@ -54,6 +54,10 @@ PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank)
   gtk_box_append(GTK_BOX(box), top_center_box_);
   gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
 
+  show_ai_variation_button_ = gtk_button_new_with_label("Show AI Variation");
+  g_signal_connect(show_ai_variation_button_, "clicked",
+                   G_CALLBACK(on_show_ai_variation_clicked), this);
+
   gtk_box_append(GTK_BOX(box), board_widget().widget());
 
   navigation_bar_ = gtk_action_bar_new();
@@ -189,7 +193,7 @@ void PlayAIWindow::evaluate_current_position() {
           LOG(ERROR) << "katago: " << *error;
           return;
         }
-
+        katago_last_resp_ = resp;
         eval_bar_.update(resp.root_info.winrate, resp.root_info.score_lead);
       });
 }
@@ -290,6 +294,8 @@ void PlayAIWindow::on_show_game_result(GObject* src, GAsyncResult* res,
   win->state_ = State::kReviewing;
   gtk_center_box_set_center_widget(GTK_CENTER_BOX(win->top_center_box_),
                                    win->eval_bar_);
+  gtk_center_box_set_end_widget(GTK_CENTER_BOX(win->top_center_box_),
+                                win->show_ai_variation_button_);
   gtk_widget_set_visible(GTK_WIDGET(win->navigation_bar_), true);
 
   for (int i = 0; i < 19; ++i) {
@@ -322,6 +328,15 @@ void PlayAIWindow::on_autocount_clicked(GtkWidget* /*self*/,
                                         gpointer user_data) {
   PlayAIWindow* win = (PlayAIWindow*)user_data;
   win->finish_game(wq::Color::kNone, 0);
+}
+
+void PlayAIWindow::on_show_ai_variation_clicked(GtkWidget* /*self*/,
+                                                gpointer user_data) {
+  PlayAIWindow* win = (PlayAIWindow*)user_data;
+  for (const auto& [r, c] : win->katago_last_resp_.move_infos[0].pv) {
+    win->move(r, c, kMoveFlagVariation);
+  }
+  win->evaluate_current_position();
 }
 
 }  // namespace ui
