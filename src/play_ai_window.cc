@@ -26,17 +26,15 @@ static int max_visits_for_rank(Rank rank) {
 }
 
 PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank)
-    : Window(ctx) {
+    : GameWindow(ctx, 19), play_style_(play_style), rank_(rank) {
   std::ostringstream title;
-  title << "Play vs AI (" << style_string(play_style) << ' '
-        << rank_string(rank) << ")";
+  title << "Play vs AI (" << style_string(play_style_) << ' '
+        << rank_string(rank_) << ")";
 
   gtk_window_set_title(GTK_WINDOW(window_), title.str().c_str());
-  gtk_window_set_default_size(GTK_WINDOW(window_), 800, 800);
 
   GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
 
-  // Top bar
   eval_bar_.update(0.5, 0);
   top_center_box_ = gtk_center_box_new();
   GtkWidget* game_action_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
@@ -56,61 +54,19 @@ PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank)
   gtk_box_append(GTK_BOX(box), top_center_box_);
   gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
 
-  // Board area
-  board_ = std::make_unique<wq::Board>(19, 19);
-  goban_ =
-      std::make_unique<GtkGoban>("main_board", 19, 0, 0, 18, 18, ctx_.rand());
-  goban_->set_board_texture(ctx.board_texture());
-  goban_->set_black_stone_textures(ctx.black_stone_textures().data(),
-                                   ctx.black_stone_textures().size());
-  goban_->set_white_stone_textures(ctx.white_stone_textures().data(),
-                                   ctx.white_stone_textures().size());
-  gtk_box_append(GTK_BOX(box), goban_->widget());
+  gtk_box_append(GTK_BOX(box), board_widget().widget());
 
-  // Navigation bar
   navigation_bar_ = gtk_action_bar_new();
-  GtkWidget* tool_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-  GtkWidget* first_move_button = gtk_button_new_with_label("|<");
-  g_signal_connect(first_move_button, "clicked",
-                   G_CALLBACK(on_first_move_clicked), this);
-  GtkWidget* prev_n_moves_button = gtk_button_new_with_label("<<");
-  g_signal_connect(prev_n_moves_button, "clicked",
-                   G_CALLBACK(on_prev_n_moves_clicked), this);
-  GtkWidget* prev_move_button = gtk_button_new_with_label("<");
-  g_signal_connect(prev_move_button, "clicked",
-                   G_CALLBACK(on_prev_move_clicked), this);
-  GtkWidget* next_move_button = gtk_button_new_with_label(">");
-  g_signal_connect(next_move_button, "clicked",
-                   G_CALLBACK(on_next_move_clicked), this);
-  GtkWidget* next_n_moves_button = gtk_button_new_with_label(">>");
-  g_signal_connect(next_n_moves_button, "clicked",
-                   G_CALLBACK(on_next_n_moves_clicked), this);
-  GtkWidget* last_move_button = gtk_button_new_with_label(">|");
-  g_signal_connect(last_move_button, "clicked",
-                   G_CALLBACK(on_last_move_clicked), this);
-  gtk_box_append(GTK_BOX(tool_box), first_move_button);
-  gtk_box_append(GTK_BOX(tool_box), prev_n_moves_button);
-  gtk_box_append(GTK_BOX(tool_box), prev_move_button);
-  gtk_box_append(GTK_BOX(tool_box), next_move_button);
-  gtk_box_append(GTK_BOX(tool_box), next_n_moves_button);
-  gtk_box_append(GTK_BOX(tool_box), last_move_button);
-  gtk_action_bar_set_center_widget(GTK_ACTION_BAR(navigation_bar_), tool_box);
+  gtk_action_bar_set_center_widget(GTK_ACTION_BAR(navigation_bar_),
+                                   navigation_bar_widget());
   gtk_box_append(GTK_BOX(box), navigation_bar_);
   gtk_widget_set_visible(GTK_WIDGET(navigation_bar_), false);
 
   gtk_window_set_child(GTK_WINDOW(window_), box);
   gtk_window_present(GTK_WINDOW(window_));
 
-  using namespace std::placeholders;
-  goban_->set_on_point_click(
-      std::bind(&PlayAIWindow::on_point_click, this, _1, _2));
-  goban_->set_on_point_enter(
-      std::bind(&PlayAIWindow::on_point_enter, this, _1, _2));
-  goban_->set_on_point_leave(
-      std::bind(&PlayAIWindow::on_point_leave, this, _1, _2));
-
   std::string human_profile;
-  switch (play_style) {
+  switch (play_style_) {
     case PlayStyle::kPreAlphaZero:
       human_profile += "preaz_";
       break;
@@ -141,56 +97,8 @@ PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank)
 
 void PlayAIWindow::on_point_click(int r, int c) {
   if (state_ != State::kPlaying && state_ != State::kReviewing) return;
-  if (state_ == State::kPlaying && turn_ != my_color_) return;
-
-  auto prev_move = board_->last_move();
-
-  wq::PointList removed;
-  if (!board_->move(turn_, r, c, removed)) return;
-
-  bool is_variation = false;
-  if (cur_move_ < moves_.size() || state_ != State::kPlaying) {
-    variation_moves_.push_back(wq::Move(turn_, wq::Point(r, c)));
-    is_variation = true;
-    // TODO do not append to variation if it matches next mainline move
-  } else {
-    cur_move_++;
-    moves_.push_back(wq::Move(turn_, wq::Point(r, c)));
-  }
-
-  GtkMediaStream* snd = ctx_.play_stone_sound();
-  if (removed.size() > 5)
-    snd = ctx_.capture_many_sound();
-  else if (removed.size() > 1)
-    snd = ctx_.capture_few_sound();
-  else if (removed.size() == 1)
-    snd = ctx_.capture_one_sound();
-  gtk_media_stream_set_volume(snd, 1.0);
-  gtk_media_stream_play(snd);
-
-  if (prev_move) {
-    const auto& [pcol, pnt] = prev_move.value();
-    const auto& [pr, pc] = pnt;
-    goban_->set_annotation(pr, pc, AnnotationType::kNone);
-  }
-
-  goban_->set_point(r, c, turn_);
-  for (const auto& [rr, cc] : removed)
-    goban_->set_point(rr, cc, wq::Color::kNone);
-  if (is_variation) {
-    goban_->set_annotation(r, c, AnnotationType::kTopLeftTriangle);
-    goban_->set_annotation_color(
-        r, c, turn_ == wq::Color::kBlack ? color_red : color_blue);
-    goban_->set_text(r, c, std::to_string(variation_moves_.size()));
-    goban_->set_text_color(
-        r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
-  } else {
-    goban_->set_annotation(r, c, AnnotationType::kBottomRightTriangle);
-    goban_->set_annotation_color(
-        r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
-  }
-
-  toggle_turn();
+  if (state_ == State::kPlaying && turn() != my_color_) return;
+  if (!move(r, c, kMoveFlagSound)) return;
 
   consecutive_pass_ = 0;
 
@@ -208,44 +116,23 @@ void PlayAIWindow::on_point_click(int r, int c) {
 
 void PlayAIWindow::on_point_enter(int r, int c) {
   if (state_ == State::kCounting) return;
-  if (board_->at(r, c) != wq::Color::kNone) return;
-  switch (turn_) {
-    case wq::Color::kBlack:
-      goban_->set_annotation_color(r, c, color_black);
-      break;
-    case wq::Color::kWhite:
-      goban_->set_annotation_color(r, c, color_white);
-      break;
-    case wq::Color::kNone:
-      break;
-  }
-  goban_->set_annotation(r, c, AnnotationType::kTerritory);
+  GameWindow::on_point_enter(r, c);
 }
 
 void PlayAIWindow::on_point_leave(int r, int c) {
   if (state_ == State::kCounting) return;
-  if (board_->at(r, c) != wq::Color::kNone) return;
-  goban_->set_annotation(r, c, AnnotationType::kNone);
+  GameWindow::on_point_leave(r, c);
+}
+
+void PlayAIWindow::on_board_position_changed() {
+  if (state_ != State::kPlaying) evaluate_current_position();
 }
 
 void PlayAIWindow::on_pass() {
   if (state_ != State::kPlaying && state_ != State::kReviewing) return;
-  if (state_ == State::kPlaying && turn_ != my_color_) return;
+  if (state_ == State::kPlaying && turn() != my_color_) return;
 
-  auto prev_move = board_->last_move();
-
-  if (cur_move_ < moves_.size()) moves_.resize(cur_move_);
-  cur_move_++;
-  moves_.push_back(wq::Move(turn_, wq::kPass));
-
-  if (prev_move) {
-    const auto& [pcol, pnt] = prev_move.value();
-    const auto& [pr, pc] = pnt;
-    goban_->set_annotation(pr, pc, AnnotationType::kNone);
-  }
-
-  toggle_turn();
-
+  pass();
   consecutive_pass_++;
   if (state_ == State::kPlaying && consecutive_pass_ == 2)
     finish_game(wq::Color::kNone, 0);
@@ -264,10 +151,7 @@ void PlayAIWindow::on_pass() {
 
 void PlayAIWindow::gen_move() {
   if (!last_query_id_.empty()) ctx_.katago()->cancel_query(last_query_id_);
-  katago_query_.moves =
-      wq::MoveList(moves_.begin(), moves_.begin() + cur_move_);
-  katago_query_.moves.insert(katago_query_.moves.end(),
-                             variation_moves_.begin(), variation_moves_.end());
+  katago_query_.moves = moves();
   last_query_id_ = ctx_.katago()->query(
       katago_query_,
       [this](KataGoClient::Response resp, std::optional<std::string> error) {
@@ -280,135 +164,21 @@ void PlayAIWindow::gen_move() {
         std::discrete_distribution<> dist(resp.human_policy.begin(),
                                           resp.human_policy.end());
         const int move_index = dist(ctx_.rand());
-        auto prev_move = board_->last_move();
-
-        if (move_index == resp.human_policy.size() - 1) {  // pass
-          cur_move_++;
-          moves_.push_back(wq::Move(turn_, wq::kPass));
-
-          if (prev_move) {
-            const auto& [pcol, pnt] = prev_move.value();
-            const auto& [pr, pc] = pnt;
-            goban_->set_annotation(pr, pc, AnnotationType::kNone);
-          }
+        if (move_index == (int)resp.human_policy.size() - 1) {
+          pass();
           consecutive_pass_++;
         } else {
-          int r = move_index / 19;
-          int c = move_index % 19;
-
-          wq::PointList removed;
-          if (!board_->move(turn_, r, c, removed)) return;
-
-          cur_move_++;
-          moves_.push_back(wq::Move(turn_, wq::Point(r, c)));
-
-          if (prev_move) {
-            const auto& [pcol, pnt] = prev_move.value();
-            const auto& [pr, pc] = pnt;
-            goban_->set_annotation(pr, pc, AnnotationType::kNone);
-          }
-
-          goban_->set_point(r, c, turn_);
-          for (const auto& [rr, cc] : removed)
-            goban_->set_point(rr, cc, wq::Color::kNone);
-          goban_->set_annotation(r, c, AnnotationType::kBottomRightTriangle);
-          goban_->set_annotation_color(
-              r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
+          const int r = move_index / 19;
+          const int c = move_index % 19;
+          move(r, c, kMoveFlagNone);
         }
-
-        toggle_turn();
-
         if (consecutive_pass_ == 2) finish_game(wq::Color::kNone, 0);
       });
 }
 
-void PlayAIWindow::toggle_turn() {
-  switch (turn_) {
-    case wq::Color::kNone:
-      break;
-    case wq::Color::kBlack:
-      turn_ = wq::Color::kWhite;
-      break;
-    case wq::Color::kWhite:
-      turn_ = wq::Color::kBlack;
-      break;
-  }
-}
-
-bool PlayAIWindow::goto_prev_move() {
-  int r, c;
-  wq::PointList added;
-  if (!board_->undo(r, c, added)) return false;
-
-  if (variation_moves_.empty()) {
-    cur_move_--;
-  } else {
-    variation_moves_.pop_back();
-    goban_->set_text(r, c, "");
-  }
-
-  goban_->set_annotation(r, c, AnnotationType::kNone);
-  goban_->set_point(r, c, wq::Color::kNone);
-  for (const auto& [rr, cc] : added) {
-    goban_->set_point(rr, cc, turn_);
-  }
-
-  if (auto prev_move = board_->last_move()) {
-    const auto& [col, pt] = prev_move.value();
-    const auto& [rr, cc] = pt;
-    if (variation_moves_.empty()) {
-      goban_->set_annotation(rr, cc, AnnotationType::kBottomRightTriangle);
-      goban_->set_annotation_color(
-          rr, cc, turn_ == wq::Color::kBlack ? color_white : color_black);
-    } else {
-      goban_->set_annotation(rr, cc, AnnotationType::kTopLeftTriangle);
-      goban_->set_annotation_color(
-          rr, cc, turn_ == wq::Color::kBlack ? color_red : color_blue);
-      goban_->set_text(rr, cc, std::to_string(variation_moves_.size()));
-      goban_->set_text_color(
-          rr, cc, turn_ == wq::Color::kBlack ? color_white : color_black);
-    }
-  }
-
-  toggle_turn();
-  return true;
-}
-
-bool PlayAIWindow::goto_next_move() {
-  if (cur_move_ >= moves_.size() || !variation_moves_.empty()) return false;
-
-  auto prev_move = board_->last_move();
-
-  const auto& [col, pnt] = moves_[cur_move_];
-  const auto& [r, c] = pnt;
-  wq::PointList removed;
-  board_->move(turn_, r, c, removed);
-
-  cur_move_++;
-
-  if (prev_move) {
-    const auto& [pcol, pnt] = prev_move.value();
-    const auto& [pr, pc] = pnt;
-    goban_->set_annotation(pr, pc, AnnotationType::kNone);
-  }
-
-  goban_->set_point(r, c, turn_);
-  for (const auto& [rr, cc] : removed)
-    goban_->set_point(rr, cc, wq::Color::kNone);
-  goban_->set_annotation(r, c, AnnotationType::kBottomRightTriangle);
-  goban_->set_annotation_color(
-      r, c, turn_ == wq::Color::kBlack ? color_white : color_black);
-
-  toggle_turn();
-  return true;
-}
-
 void PlayAIWindow::evaluate_current_position() {
   if (!last_query_id_.empty()) ctx_.katago()->cancel_query(last_query_id_);
-  katago_query_.moves =
-      wq::MoveList(moves_.begin(), moves_.begin() + cur_move_);
-  katago_query_.moves.insert(katago_query_.moves.end(),
-                             variation_moves_.begin(), variation_moves_.end());
+  katago_query_.moves = moves();
   last_query_id_ = ctx_.katago()->query(
       katago_query_,
       [this](KataGoClient::Response resp, std::optional<std::string> error) {
@@ -432,8 +202,7 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
     state_ = State::kCounting;
     if (!last_query_id_.empty()) ctx_.katago()->cancel_query(last_query_id_);
     katago_query_.include_ownership = true;
-    katago_query_.moves =
-        wq::MoveList(moves_.begin(), moves_.begin() + cur_move_);
+    katago_query_.moves = moves();
     last_query_id_ = ctx_.katago()->query(
         katago_query_,
         [this](KataGoClient::Response resp, std::optional<std::string> error) {
@@ -450,35 +219,39 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
             for (int j = 0; j < 19; ++j) {
               const double t = resp.ownership[i * 19 + j];
               if (t > 0.9) {
-                switch (board_->at(i, j)) {
+                switch (board().at(i, j)) {
                   case wq::Color::kNone:
-                    goban_->set_annotation(i, j, AnnotationType::kTerritory);
-                    goban_->set_annotation_color(i, j, color_black);
+                    board_widget().set_annotation(i, j,
+                                                  AnnotationType::kTerritory);
+                    board_widget().set_annotation_color(i, j, color_black);
                     break;
                   case wq::Color::kBlack:
-                    goban_->set_annotation(i, j, AnnotationType::kNone);
+                    board_widget().set_annotation(i, j, AnnotationType::kNone);
                     break;
                   case wq::Color::kWhite:
-                    goban_->set_annotation(i, j, AnnotationType::kTerritory);
-                    goban_->set_annotation_color(i, j, color_black);
+                    board_widget().set_annotation(i, j,
+                                                  AnnotationType::kTerritory);
+                    board_widget().set_annotation_color(i, j, color_black);
                     break;
                 }
               } else if (t < -0.9) {
-                switch (board_->at(i, j)) {
+                switch (board().at(i, j)) {
                   case wq::Color::kNone:
-                    goban_->set_annotation(i, j, AnnotationType::kTerritory);
-                    goban_->set_annotation_color(i, j, color_white);
+                    board_widget().set_annotation(i, j,
+                                                  AnnotationType::kTerritory);
+                    board_widget().set_annotation_color(i, j, color_white);
                     break;
                   case wq::Color::kBlack:
-                    goban_->set_annotation(i, j, AnnotationType::kTerritory);
-                    goban_->set_annotation_color(i, j, color_white);
+                    board_widget().set_annotation(i, j,
+                                                  AnnotationType::kTerritory);
+                    board_widget().set_annotation_color(i, j, color_white);
                     break;
                   case wq::Color::kWhite:
-                    goban_->set_annotation(i, j, AnnotationType::kNone);
+                    board_widget().set_annotation(i, j, AnnotationType::kNone);
                     break;
                 }
               } else {
-                goban_->set_annotation(i, j, AnnotationType::kNone);
+                board_widget().set_annotation(i, j, AnnotationType::kNone);
               }
             }
           }
@@ -518,7 +291,7 @@ void PlayAIWindow::on_show_game_result(GObject* src, GAsyncResult* res,
 
   for (int i = 0; i < 19; ++i) {
     for (int j = 0; j < 19; ++j) {
-      win->goban_->set_annotation(i, j, AnnotationType::kNone);
+      win->board_widget().set_annotation(i, j, AnnotationType::kNone);
     }
   }
 
@@ -546,56 +319,6 @@ void PlayAIWindow::on_autocount_clicked(GtkWidget* /*self*/,
                                         gpointer user_data) {
   PlayAIWindow* win = (PlayAIWindow*)user_data;
   win->finish_game(wq::Color::kNone, 0);
-}
-
-void PlayAIWindow::on_first_move_clicked(GtkWidget* /*self*/,
-                                         gpointer user_data) {
-  PlayAIWindow* win = (PlayAIWindow*)user_data;
-  bool changed = false;
-  while (win->goto_prev_move()) changed = true;
-  if (changed) win->evaluate_current_position();
-}
-
-void PlayAIWindow::on_prev_n_moves_clicked(GtkWidget* /*self*/,
-                                           gpointer user_data) {
-  PlayAIWindow* win = (PlayAIWindow*)user_data;
-  bool changed = false;
-  for (int i = 0; i < 10; ++i) {
-    if (!win->goto_prev_move()) break;
-    changed = true;
-  }
-  if (changed) win->evaluate_current_position();
-}
-
-void PlayAIWindow::on_prev_move_clicked(GtkWidget* /*self*/,
-                                        gpointer user_data) {
-  PlayAIWindow* win = (PlayAIWindow*)user_data;
-  if (win->goto_prev_move()) win->evaluate_current_position();
-}
-
-void PlayAIWindow::on_next_move_clicked(GtkWidget* /*self*/,
-                                        gpointer user_data) {
-  PlayAIWindow* win = (PlayAIWindow*)user_data;
-  if (win->goto_next_move()) win->evaluate_current_position();
-}
-
-void PlayAIWindow::on_next_n_moves_clicked(GtkWidget* /*self*/,
-                                           gpointer user_data) {
-  PlayAIWindow* win = (PlayAIWindow*)user_data;
-  bool changed = false;
-  for (int i = 0; i < 10; ++i) {
-    if (!win->goto_next_move()) break;
-    changed = true;
-  }
-  if (changed) win->evaluate_current_position();
-}
-
-void PlayAIWindow::on_last_move_clicked(GtkWidget* /*self*/,
-                                        gpointer user_data) {
-  PlayAIWindow* win = (PlayAIWindow*)user_data;
-  bool changed = false;
-  while (win->goto_next_move()) changed = true;
-  if (changed) win->evaluate_current_position();
 }
 
 }  // namespace ui

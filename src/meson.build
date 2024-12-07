@@ -2,6 +2,7 @@ main_source = files(
     'app_context.cc',
     'board.cc',
     'editor_window.cc',
+    'game_window.cc',
     'gtk_eval_bar.cc',
     'gtkgoban.cc',
     'http.cc',

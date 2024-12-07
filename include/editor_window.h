@@ -7,39 +7,26 @@
 
 #include "app_context.h"
 #include "board.h"
+#include "game_window.h"
 #include "gtkgoban.h"
-#include "window.h"
 
 namespace ui {
 
-class EditorWindow : public Window {
+class EditorWindow : public GameWindow {
  public:
   EditorWindow(AppContext& ctx);
 
+ protected:
+  void on_point_click(int r, int c) override;
+  void on_board_position_changed() override;
+
  private:
-  // State
-  wq::Color turn_ = wq::Color::kBlack;
-  std::unique_ptr<wq::Board> board_;
-  size_t cur_move_ = 0;
-  wq::MoveList moves_;
-
-  // Widgets
-  std::unique_ptr<GtkGoban> goban_;
   GtkWidget* board_size_dropdown_;
-
-  void toggle_turn();
-  bool goto_prev_move();
-  bool goto_next_move();
+  GtkWidget* variation_button_;
 
   static void on_board_size_changed(GObject* self, GParamSpec* pspec,
                                     gpointer user_data);
-
-  static void on_first_move_clicked(GtkWidget* self, gpointer user_data);
-  static void on_prev_n_moves_clicked(GtkWidget* self, gpointer user_data);
-  static void on_prev_move_clicked(GtkWidget* self, gpointer user_data);
-  static void on_next_move_clicked(GtkWidget* self, gpointer user_data);
-  static void on_next_n_moves_clicked(GtkWidget* self, gpointer user_data);
-  static void on_last_move_clicked(GtkWidget* self, gpointer user_data);
+  static void on_variation_toggled(GtkToggleButton* self, gpointer user_data);
 };
 
 }  // namespace ui

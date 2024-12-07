@@ -3,6 +3,7 @@ project_header_files += files(
     'board.h',
     'color.h',
     'editor_window.h',
+    'game_window.h',
     'gtk_eval_bar.h',
     'gtkgoban.h',
     'http.h',
