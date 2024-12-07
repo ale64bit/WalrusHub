@@ -40,6 +40,9 @@ std::optional<Task> import_101weiqi_task(std::string_view data) {
   Task task;
   task.source_ = "101weiqi";
   task.description_ = e["title"];
+  if (task.description_.empty() && e.contains("name") && !e["name"].is_null()) {
+    task.description_ = e["name"];
+  }
   std::replace(task.description_.begin(), task.description_.end(), '\'', ';');
   task.rating_ = e["vote"];
   task.type_ = TaskType((int)e["qtype"]);

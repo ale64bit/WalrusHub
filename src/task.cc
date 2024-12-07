@@ -36,11 +36,11 @@ constexpr const char *kTaskDBSchema = R"(
   );
 
   CREATE TABLE IF NOT EXISTS tasks_tags(
-    task_id INTEGER,
     tag_id  INTEGER,
-    FOREIGN KEY(task_id) REFERENCES tasks(id),
+    task_id INTEGER,
     FOREIGN KEY(tag_id) REFERENCES tags(id),
-    PRIMARY KEY(task_id, tag_id)
+    FOREIGN KEY(task_id) REFERENCES tasks(id),
+    PRIMARY KEY(tag_id, task_id)
   );
 )";
 
@@ -158,7 +158,7 @@ int64_t TaskDB::add_task(const Task &task) {
 
   if (!task.tags_.empty()) {
     q.str("");
-    q << "INSERT INTO tasks_tags (task_id, tag_id) VALUES ";
+    q << "INSERT INTO tasks_tags (tag_id, task_id) VALUES ";
     bool first = true;
     for (const auto &tag_id : task.tags_) {
       if (!first) {
@@ -166,7 +166,7 @@ int64_t TaskDB::add_task(const Task &task) {
       } else {
         first = false;
       }
-      q << "(" << task_id << ", " << tag_id << ")";
+      q << "(" << tag_id << ", " << task_id << ")";
     }
     q << ";";
 
