@@ -98,7 +98,10 @@ PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank)
 void PlayAIWindow::on_point_click(int r, int c) {
   if (state_ != State::kPlaying && state_ != State::kReviewing) return;
   if (state_ == State::kPlaying && turn() != my_color_) return;
-  if (!move(r, c, kMoveFlagSound)) return;
+
+  int flags = kMoveFlagSound;
+  if (state_ != State::kPlaying) flags |= kMoveFlagVariation;
+  if (!move(r, c, MoveFlag(flags))) return;
 
   consecutive_pass_ = 0;
 

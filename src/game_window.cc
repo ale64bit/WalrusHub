@@ -103,6 +103,7 @@ bool GameWindow::move(int r, int c, MoveFlag flags) {
   if (flags & kMoveFlagVariation) {
     variation_moves_.push_back(wq::Move(turn_, wq::Point(r, c)));
   } else {
+    if (cur_move_ < moves_.size()) moves_.resize(cur_move_);
     cur_move_++;
     moves_.push_back(wq::Move(turn_, wq::Point(r, c)));
   }
@@ -171,6 +172,10 @@ bool GameWindow::goto_prev_move() {
     if (!board_->undo(r, c, added)) {
       LOG(ERROR) << "undo move did not match";
       std::exit(1);
+    }
+    if (wq::Point(r, c) != last) {
+      LOG(ERROR) << "wtf: goto_prev_move: want (" << last.first << ","
+                 << last.second << "), got (" << r << "," << c << ")";
     }
     assert(wq::Point(r, c) == last);
     goban_->set_text(r, c, "");
