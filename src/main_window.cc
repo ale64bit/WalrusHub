@@ -7,7 +7,6 @@
 #include "play_ai_preset_window.h"
 #include "settings_window.h"
 #include "solve_preset_window.h"
-#include "sputnik_debug_window.h"
 #include "stats_window.h"
 #include "task.h"
 
