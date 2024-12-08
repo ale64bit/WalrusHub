@@ -655,7 +655,8 @@ static std::string topic_training_label(Rank rank, int total, int fails) {
   return ss.str();
 }
 
-SolvePresetWindow::SolvePresetWindow(AppContext& ctx) : Window(ctx) {
+SolvePresetWindow::SolvePresetWindow(AppContext& ctx)
+    : Window(ctx, kSolvePresetWindowGroup) {
   gtk_window_set_title(GTK_WINDOW(window_), "Training");
   gtk_window_set_default_size(GTK_WINDOW(window_), 900, 550);
 
@@ -764,12 +765,9 @@ SolvePresetWindow::SolvePresetWindow(AppContext& ctx) : Window(ctx) {
 
   gtk_window_set_child(GTK_WINDOW(window_), box);
   gtk_window_present(GTK_WINDOW(window_));
-  window_groups_[kSolvePresetWindowGroup].insert(this);
 }
 
-SolvePresetWindow::~SolvePresetWindow() {
-  window_groups_[kSolvePresetWindowGroup].erase(this);
-}
+void SolvePresetWindow::update() { update_preset_buttons(); }
 
 void SolvePresetWindow::update_preset_buttons() {
   const auto tag_stats = ctx_.stats().get_tag_stats();

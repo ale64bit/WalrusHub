@@ -23,12 +23,7 @@ class PlayAIWindow : public GameWindow {
   };
 
  public:
-  enum PlayStyle {
-    kPreAlphaZero,
-    kModern,
-  };
-
-  PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank);
+  PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank, bool ranked);
 
  protected:
   void on_point_click(int r, int c) override;
@@ -39,6 +34,8 @@ class PlayAIWindow : public GameWindow {
  private:
   const PlayStyle play_style_;
   const Rank rank_;
+  const bool ranked_;
+
   // State
   State state_ = State::kPlaying;
   wq::Color my_color_ = wq::Color::kNone;

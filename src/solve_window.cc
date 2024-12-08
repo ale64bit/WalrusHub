@@ -391,10 +391,7 @@ void SolveWindow::set_solve_result(AnswerType type) {
         const auto& [tag_id, rank] = *tag_ref_;
         ctx_.stats().update_tag_stats(
             tag_id, rank, 1, (error_count_ > preset_.max_errors_) ? 1 : 0);
-        for (Window* w :
-             window_groups_[SolvePresetWindow::kSolvePresetWindowGroup]) {
-          reinterpret_cast<SolvePresetWindow*>(w)->update_preset_buttons();
-        }
+        Window::update_group(SolvePresetWindow::kSolvePresetWindowGroup);
       }
     }
   }

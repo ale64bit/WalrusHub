@@ -14,6 +14,13 @@
 
 using json = nlohmann::json;
 
+enum class PlayStyle {
+  kPreAlphaZero,
+  kModern,
+};
+
+const char *play_style_string(PlayStyle style);
+
 class KataGoClient {
  public:
   struct Query {

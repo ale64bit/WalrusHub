@@ -14,14 +14,19 @@ namespace ui {
 class Window {
  public:
   Window(AppContext& ctx);
+  Window(AppContext& ctx, std::string group_name);
   virtual ~Window();
 
+  virtual void update();
+  static void update_group(std::string name);
+
  protected:
-  static std::unordered_map<std::string, std::set<Window*>> window_groups_;
   AppContext& ctx_;
+  const std::string group_;
   const GtkWidget* window_;
 
  private:
+  static std::unordered_map<std::string, std::set<Window*>> window_groups_;
   static void on_destroy(GtkWidget* self, gpointer user_data);
 };
 

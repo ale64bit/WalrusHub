@@ -4,6 +4,16 @@
 
 #include "log.h"
 
+const char *play_style_string(PlayStyle style) {
+  switch (style) {
+    case PlayStyle::kPreAlphaZero:
+      return "Pre-AlphaZero";
+    case PlayStyle::kModern:
+      return "Modern";
+  }
+  return "?";
+}
+
 KataGoClient::KataGoClient(const char *katago_path, const char *model_path,
                            const char *human_model_path,
                            const char *config_path)

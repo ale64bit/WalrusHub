@@ -7,28 +7,23 @@
 #include "board.h"
 #include "color.h"
 #include "log.h"
+#include "play_ai_preset_window.h"
 
 namespace ui {
-
-static const char* style_string(PlayAIWindow::PlayStyle style) {
-  switch (style) {
-    case PlayAIWindow::PlayStyle::kPreAlphaZero:
-      return "Pre-AlphaZero";
-    case PlayAIWindow::PlayStyle::kModern:
-      return "Modern";
-  }
-  return "?";
-}
 
 static int max_visits_for_rank(Rank rank) {
   if (rank < Rank::k5D) return 1;
   return 3 * ((int)rank - int(Rank::k4D));
 }
 
-PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank)
-    : GameWindow(ctx, 19), play_style_(play_style), rank_(rank) {
+PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank,
+                           bool ranked)
+    : GameWindow(ctx, 19),
+      play_style_(play_style),
+      rank_(rank),
+      ranked_(ranked) {
   std::ostringstream title;
-  title << "Play vs AI (" << style_string(play_style_) << ' '
+  title << "Play vs AI (" << play_style_string(play_style_) << ' '
         << rank_string(rank_) << ")";
 
   gtk_window_set_title(GTK_WINDOW(window_), title.str().c_str());
@@ -286,6 +281,13 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
   gtk_alert_dialog_choose(dialog, GTK_WINDOW(window_), nullptr,
                           on_show_game_result, this);
   g_object_unref(dialog);
+
+  if (ranked_) {
+    ctx_.stats().update_play_ai_stats(
+        play_style_, rank_, winner == my_color_ ? 1 : 0,
+        (winner != wq::Color::kNone && winner != my_color_) ? 1 : 0);
+    Window::update_group(PlayAIPresetWindow::kPlayAIPresetWindowGroup);
+  }
 }
 
 void PlayAIWindow::on_show_game_result(GObject* src, GAsyncResult* res,

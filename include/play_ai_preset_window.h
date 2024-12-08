@@ -1,18 +1,26 @@
 #pragma once
 
+#include <map>
+
+#include "katago_client.h"
+#include "task.h"
 #include "window.h"
 
 namespace ui {
 
 class PlayAIPresetWindow : public Window {
  public:
+  static constexpr const char* kPlayAIPresetWindowGroup = "PlayAIPresetWindow";
+
   PlayAIPresetWindow(AppContext& ctx);
+  void update() override;
 
  private:
-  GtkWidget* style_dropdown_;
-  GtkWidget* rank_dropdown_;
+  std::map<std::pair<PlayStyle, Rank>, GtkWidget*> preset_buttons_;
 
-  static void on_play_clicked(GtkWidget* self, gpointer user_data);
+  void update_preset_buttons();
+
+  static void on_preset_clicked(GtkWidget* self, gpointer data);
 };
 
 }  // namespace ui
