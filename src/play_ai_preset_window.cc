@@ -29,8 +29,8 @@ PlayAIPresetWindow::PlayAIPresetWindow(AppContext& ctx)
            PlayStyle::kModern,
        }) {
     GtkWidget* grid = gtk_grid_new();
-    gtk_widget_set_hexpand(GTK_WIDGET(grid), true);
-    gtk_widget_set_vexpand(GTK_WIDGET(grid), true);
+    gtk_grid_set_row_homogeneous(GTK_GRID(grid), true);
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid), true);
 
     // DDK
     gtk_grid_attach(GTK_GRID(grid), gtk_label_new("DDK"), 0, 0, 1, 1);
