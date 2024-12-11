@@ -12,7 +12,6 @@ jobs:
           sudo apt-get install meson libgtk-4-dev unzip
       - name: Create subprojects
         run: |
-          cd ${{ github.workspace }}
           mkdir subprojects
           meson wrap install curl
           meson wrap install nlohmann_json
@@ -32,7 +31,6 @@ jobs:
           brew install meson gtk4
       - name: Create subprojects
         run: |
-          cd ${{ github.workspace }}
           mkdir subprojects
           meson wrap install curl
           meson wrap install nlohmann_json
@@ -65,7 +63,6 @@ jobs:
             mingw-w64-ucrt-x86_64-meson
       - name: Create subprojects
         run: |
-          cd ${{ github.workspace }}
           mkdir subprojects
           meson wrap install curl
           meson wrap install nlohmann_json
