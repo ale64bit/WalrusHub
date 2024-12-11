@@ -64,9 +64,9 @@ jobs:
       - name: Create subprojects
         run: |
           mkdir subprojects
-          meson wrap install curl
-          meson wrap install nlohmann_json
-          meson wrap install sqlite3
+          meson wrap install curl --allow-insecure
+          meson wrap install nlohmann_json --allow-insecure
+          meson wrap install sqlite3 --allow-insecure
       - name: Build
         run: |
           meson setup builddir
