@@ -1,0 +1,23 @@
+name: Build Linux
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install meson libgtk-4-dev unzip
+      - name: Create subprojects
+        run: |
+          mkdir subprojects
+          meson wrap install curl
+          meson wrap install nlohmann_json
+          meson wrap install sqlite3
+      - name: Build
+        run: |
+          meson setup builddir
+          unzip assets/tasks.zip -d assets/
+          meson compile -C builddir

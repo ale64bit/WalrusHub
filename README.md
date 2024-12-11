@@ -2,6 +2,10 @@
 
 A playground for weiqi tools and experimentation.
 
+![Linux](https://github.com/ale64bit/WalrusHub/actions/workflows/build-linux.yaml/badge.svg)
+![MacOS](https://github.com/ale64bit/WalrusHub/actions/workflows/build-macos.yaml/badge.svg)
+![Windows](https://github.com/ale64bit/WalrusHub/actions/workflows/build-windows.yaml/badge.svg)
+
 ## Build instructions
 
 The hub is written in C++ and uses [meson](https://mesonbuild.com/) as build system.

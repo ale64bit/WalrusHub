@@ -1,0 +1,36 @@
+name: Build Windows
+on: [push]
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            unzip
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-python3
+            mingw-w64-ucrt-x86_64-gtk4
+            mingw-w64-ucrt-x86_64-toolchain
+            base-devel
+            mingw-w64-ucrt-x86_64-meson
+      - name: Create subprojects
+        run: |
+          mkdir subprojects
+          meson wrap install curl
+          meson wrap install nlohmann_json
+          meson wrap install sqlite3
+      - name: Build
+        run: |
+          meson setup builddir
+          unzip assets/tasks.zip -d assets/
+          meson compile -C builddir
+          

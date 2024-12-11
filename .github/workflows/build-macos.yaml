@@ -1,0 +1,22 @@
+name: Build MacOS
+on: [push]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          brew install meson gtk4
+      - name: Create subprojects
+        run: |
+          mkdir subprojects
+          meson wrap install curl
+          meson wrap install nlohmann_json
+          meson wrap install sqlite3
+      - name: Build
+        run: |
+          meson setup builddir
+          unzip assets/tasks.zip -d assets/
+          meson compile -C builddir
