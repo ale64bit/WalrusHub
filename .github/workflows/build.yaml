@@ -54,14 +54,15 @@ jobs:
         with:
           msystem: UCRT64
           update: true
-          install: git mingw-w64-ucrt-x86_64-gcc
-      - name: Install dependencies
-        run: |
-          pacman -S unzip
-          pacman -S mingw-w64-ucrt-x86_64-python3
-          pacman -S mingw-w64-ucrt-x86_64-gtk4
-          pacman -S mingw-w64-ucrt-x86_64-toolchain base-devel
-          pacman -S mingw-w64-ucrt-x86_64-meson
+          install: >-
+            git
+            unzip
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-python3
+            mingw-w64-ucrt-x86_64-gtk4
+            mingw-w64-ucrt-x86_64-toolchain
+            base-devel
+            mingw-w64-ucrt-x86_64-meson
       - name: Create subprojects
         run: |
           cd ${{ github.workspace }}
