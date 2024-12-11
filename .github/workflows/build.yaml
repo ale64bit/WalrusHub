@@ -1,0 +1,26 @@
+name: Build
+on: [push]
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install meson libgtk-4-dev unzip
+          meson --version
+      - name: Create subprojects
+        run: |
+          cd ${{ github.workspace }}
+          mkdir subprojects
+          meson wrap install curl
+          meson wrap install nlohmann_json
+          meson wrap install sqlite3
+      - name: Build
+        run: |
+          meson setup builddir
+          unzip assets/tasks.zip -d assets/
+          meson compile -C builddir
+          
