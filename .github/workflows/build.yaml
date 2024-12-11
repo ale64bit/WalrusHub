@@ -42,4 +42,35 @@ jobs:
           meson setup builddir
           unzip assets/tasks.zip -d assets/
           meson compile -C builddir
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: git mingw-w64-ucrt-x86_64-gcc
+      - name: Install dependencies
+        run: |
+          pacman -S mingw-w64-ucrt-x86_64-unzip
+          pacman -S mingw-w64-ucrt-x86_64-python3
+          pacman -S mingw-w64-ucrt-x86_64-gtk4
+          pacman -S mingw-w64-ucrt-x86_64-meson
+      - name: Create subprojects
+        run: |
+          cd ${{ github.workspace }}
+          mkdir subprojects
+          meson wrap install curl
+          meson wrap install nlohmann_json
+          meson wrap install sqlite3
+      - name: Build
+        run: |
+          meson setup builddir
+          unzip assets/tasks.zip -d assets/
+          meson compile -C builddir
           
