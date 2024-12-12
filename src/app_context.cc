@@ -6,7 +6,8 @@
 
 #include "log.h"
 
-constexpr const gchar *kKataGoConfigGroup = "katago";
+constexpr const gchar *kConfigGroupAppearance = "appearance";
+constexpr const gchar *kConfigGroupKataGo = "katago";
 
 static GdkTexture *load_texture_from_file(const char *path) {
   auto tex_file = g_file_new_for_path(path);
@@ -79,6 +80,9 @@ void AppContext::activate(GtkApplication * /*gtkApp*/, gpointer user_data) {
     app_ctx->reload_katago();
   }
 
+  g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme",
+               app_ctx->get_appearance_theme_dark(), nullptr);
+
   app_ctx->run_func_(*app_ctx);
 }
 
@@ -94,51 +98,62 @@ void AppContext::reload_katago() {
 }
 
 void AppContext::set_katago_path(fs::path p) {
-  g_key_file_set_string(config_key_file_, kKataGoConfigGroup, "path",
+  g_key_file_set_string(config_key_file_, kConfigGroupKataGo, "path",
                         p.c_str());
   flush_config();
   reload_katago();
 }
 
 gchar *AppContext::get_katago_path() const {
-  return g_key_file_get_string(config_key_file_, kKataGoConfigGroup, "path",
+  return g_key_file_get_string(config_key_file_, kConfigGroupKataGo, "path",
                                nullptr);
 }
 
 void AppContext::set_katago_config_path(fs::path p) {
-  g_key_file_set_string(config_key_file_, kKataGoConfigGroup, "config_path",
+  g_key_file_set_string(config_key_file_, kConfigGroupKataGo, "config_path",
                         p.c_str());
   flush_config();
   reload_katago();
 }
 
 gchar *AppContext::get_katago_config_path() const {
-  return g_key_file_get_string(config_key_file_, kKataGoConfigGroup,
+  return g_key_file_get_string(config_key_file_, kConfigGroupKataGo,
                                "config_path", nullptr);
 }
 
 void AppContext::set_katago_model_path(fs::path p) {
-  g_key_file_set_string(config_key_file_, kKataGoConfigGroup, "model_path",
+  g_key_file_set_string(config_key_file_, kConfigGroupKataGo, "model_path",
                         p.c_str());
   flush_config();
   reload_katago();
 }
 
 gchar *AppContext::get_katago_model_path() const {
-  return g_key_file_get_string(config_key_file_, kKataGoConfigGroup,
+  return g_key_file_get_string(config_key_file_, kConfigGroupKataGo,
                                "model_path", nullptr);
 }
 
 void AppContext::set_katago_human_model_path(fs::path p) {
-  g_key_file_set_string(config_key_file_, kKataGoConfigGroup,
+  g_key_file_set_string(config_key_file_, kConfigGroupKataGo,
                         "human_model_path", p.c_str());
   flush_config();
   reload_katago();
 }
 
 gchar *AppContext::get_katago_human_model_path() const {
-  return g_key_file_get_string(config_key_file_, kKataGoConfigGroup,
+  return g_key_file_get_string(config_key_file_, kConfigGroupKataGo,
                                "human_model_path", nullptr);
+}
+
+void AppContext::set_appearance_theme_dark(bool value) {
+  g_key_file_set_boolean(config_key_file_, kConfigGroupAppearance, "theme_dark",
+                         value);
+  flush_config();
+}
+
+bool AppContext::get_appearance_theme_dark() const {
+  return g_key_file_get_boolean(config_key_file_, kConfigGroupAppearance,
+                                "theme_dark", nullptr);
 }
 
 void AppContext::flush_config() {

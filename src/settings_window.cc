@@ -1,10 +1,13 @@
 #include "settings_window.h"
 
+#include <array>
 #include <functional>
 
 #include "log.h"
 
 namespace ui {
+
+constexpr std::array<const char*, 3> kThemes = {"Light", "Dark", nullptr};
 
 SettingsWindow::SettingsWindow(AppContext& ctx) : Window(ctx) {
   gtk_window_set_title(GTK_WINDOW(window_), "Settings");
@@ -19,6 +22,23 @@ SettingsWindow::SettingsWindow(AppContext& ctx) : Window(ctx) {
   gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(stack_sidebar),
                               GTK_STACK(stack));
 
+  {
+    GtkWidget* appearance_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    gtk_stack_add_titled(GTK_STACK(stack), appearance_box, nullptr,
+                         "Appearance");
+
+    GtkWidget* theme_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    theme_dropdown_ = gtk_drop_down_new_from_strings(kThemes.data());
+    g_signal_connect(GTK_DROP_DOWN(theme_dropdown_), "notify::selected",
+                     G_CALLBACK(on_theme_selected), this);
+    gtk_box_append(GTK_BOX(theme_box), gtk_label_new("Theme"));
+
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(theme_dropdown_),
+                               ctx_.get_appearance_theme_dark() ? 1 : 0);
+    gtk_box_append(GTK_BOX(theme_box), theme_dropdown_);
+
+    gtk_box_append(GTK_BOX(appearance_box), theme_box);
+  }
   {
     GtkWidget* katago_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_stack_add_titled(GTK_STACK(stack), katago_box, nullptr, "KataGo");
@@ -119,6 +139,16 @@ SettingsWindow::SettingsWindow(AppContext& ctx) : Window(ctx) {
 
   gtk_window_set_child(GTK_WINDOW(window_), box);
   gtk_window_present(GTK_WINDOW(window_));
+}
+
+void SettingsWindow::on_theme_selected(GObject* /*self*/, GParamSpec* /*pspec*/,
+                                       gpointer user_data) {
+  SettingsWindow* win = (SettingsWindow*)user_data;
+  guint selected =
+      gtk_drop_down_get_selected(GTK_DROP_DOWN(win->theme_dropdown_));
+  win->ctx_.set_appearance_theme_dark(selected);
+  g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme",
+               selected, nullptr);
 }
 
 void SettingsWindow::on_change_katago_path(GFile* f) {

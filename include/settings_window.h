@@ -9,6 +9,7 @@ class SettingsWindow : public Window {
   SettingsWindow(AppContext& ctx);
 
  private:
+  GtkWidget* theme_dropdown_;
   GtkWidget* katago_path_entry_;
   GtkWidget* katago_config_path_entry_;
   GtkWidget* katago_model_path_entry_;
@@ -20,6 +21,8 @@ class SettingsWindow : public Window {
   void on_change_katago_model_path(GFile* f);
   void on_change_katago_human_model_path(GFile* f);
 
+  static void on_theme_selected(GObject* self, GParamSpec* pspec,
+                                gpointer user_data);
   static void on_file_selected(GObject* source_object, GAsyncResult* res,
                                gpointer user_data);
   static void on_change_katago_path_clicked(GtkWidget* self,

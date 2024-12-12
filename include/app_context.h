@@ -53,6 +53,8 @@ class AppContext {
   gchar *get_katago_model_path() const;
   void set_katago_human_model_path(fs::path p);
   gchar *get_katago_human_model_path() const;
+  void set_appearance_theme_dark(bool);
+  bool get_appearance_theme_dark() const;
   void flush_config();
 
  private:
