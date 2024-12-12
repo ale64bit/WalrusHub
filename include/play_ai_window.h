@@ -41,6 +41,7 @@ class PlayAIWindow : public GameWindow {
   wq::Color my_color_ = wq::Color::kNone;
   std::string last_query_id_;
   int consecutive_pass_ = 0;
+  int consecutive_resign_checks_ = 0;
 
   // Widgets
   GtkWidget* top_center_box_;
@@ -54,6 +55,7 @@ class PlayAIWindow : public GameWindow {
 
   void on_pass();
   void gen_move();
+  bool should_resign(const KataGoClient::Response& resp);
   void finish_game(wq::Color winner, double score_lead);
   void evaluate_current_position();
 

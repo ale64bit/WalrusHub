@@ -162,6 +162,11 @@ void PlayAIWindow::gen_move() {
           return;
         }
 
+        if (should_resign(resp)) {
+          finish_game(my_color_, 0);
+          return;
+        }
+
         for (double& p : resp.human_policy) p = std::clamp(p, 0., 1.);
         std::discrete_distribution<> dist(resp.human_policy.begin(),
                                           resp.human_policy.end());
@@ -176,6 +181,33 @@ void PlayAIWindow::gen_move() {
         }
         if (consecutive_pass_ == 2) finish_game(wq::Color::kNone, 0);
       });
+}
+
+bool PlayAIWindow::should_resign(const KataGoClient::Response& resp) {
+  constexpr double kScoreLeadThreshold = 40.0;
+  constexpr double kWinrateThreshold = 0.99;
+  constexpr int kConsecutiveTurns = 20;
+  constexpr int kMinMoveCount = 90;
+
+  const bool score_lead_cond =
+      (my_color_ == wq::Color::kBlack &&
+       resp.root_info.score_lead >= kScoreLeadThreshold) ||
+      (my_color_ == wq::Color::kWhite &&
+       -resp.root_info.score_lead >= kScoreLeadThreshold);
+  const bool winrate_cond = (my_color_ == wq::Color::kBlack &&
+                             resp.root_info.winrate >= kWinrateThreshold) ||
+                            (my_color_ == wq::Color::kWhite &&
+                             resp.root_info.winrate <= (1 - kWinrateThreshold));
+  if (score_lead_cond && winrate_cond) {
+    ++consecutive_resign_checks_;
+    if ((int)katago_query_.moves.size() >= kMinMoveCount &&
+        consecutive_resign_checks_ > kConsecutiveTurns) {
+      return true;
+    }
+  } else {
+    consecutive_resign_checks_ = 0;
+  }
+  return false;
 }
 
 void PlayAIWindow::evaluate_current_position() {
