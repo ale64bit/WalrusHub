@@ -41,6 +41,8 @@ class SolveWindow : public Window {
   std::unique_ptr<wq::Board> board_;
   std::optional<AnswerType> task_result_;
   bool session_complete_ = false;
+  int total_solve_time_ = 0;
+  int max_solve_time_ = 0;
 
   // Widgets
   GtkWidget* rank_label_;

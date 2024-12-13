@@ -362,6 +362,11 @@ void SolveWindow::set_solve_result(AnswerType type) {
   }
 
   if (!task_result_) {
+    const int solve_time = preset_.time_limit_sec_ - time_left_;
+    total_solve_time_ += solve_time;
+    max_solve_time_ = std::max(max_solve_time_, solve_time);
+    time_left_ = 0;
+
     task_result_ = type;
     ++task_count_;
     if (type == AnswerType::kWrong) ++error_count_;
@@ -382,7 +387,10 @@ void SolveWindow::set_solve_result(AnswerType type) {
 
     if (task_count_ == preset_.max_tasks_) {
       session_complete_ = true;
-      session_complete_dialog_ = gtk_alert_dialog_new("Session Complete");
+      session_complete_dialog_ = gtk_alert_dialog_new(
+          "Session Complete\n\nResult: %s\nTotal time: %d\nMax time: %d",
+          (error_count_ > preset_.max_errors_ ? "FAIL" : "PASS"),
+          total_solve_time_, max_solve_time_);
       gtk_alert_dialog_set_modal(session_complete_dialog_, true);
       gtk_alert_dialog_choose(session_complete_dialog_, GTK_WINDOW(window_),
                               nullptr, on_session_complete, this);
