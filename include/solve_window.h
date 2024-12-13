@@ -47,6 +47,7 @@ class SolveWindow : public Window {
   // Widgets
   GtkWidget* rank_label_;
   GtkWidget* turn_label_;
+  GtkWidget* comment_label_;
   GtkWidget* task_type_label_;
   std::unique_ptr<GtkGoban> goban_;
   GtkWidget* solve_stats_label_;

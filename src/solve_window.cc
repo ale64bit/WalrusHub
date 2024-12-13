@@ -36,7 +36,12 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
   gtk_center_box_set_start_widget(GTK_CENTER_BOX(top_box), rank_label_);
 
   turn_label_ = gtk_label_new("");
-  gtk_center_box_set_center_widget(GTK_CENTER_BOX(top_box), turn_label_);
+  comment_label_ = gtk_label_new("");
+  GtkWidget* turn_comment_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+  gtk_box_append(GTK_BOX(turn_comment_box), turn_label_);
+  gtk_box_append(GTK_BOX(turn_comment_box), comment_label_);
+
+  gtk_center_box_set_center_widget(GTK_CENTER_BOX(top_box), turn_comment_box);
 
   task_type_label_ = gtk_label_new("");
   gtk_widget_set_margin_start(task_type_label_, 8);
@@ -325,19 +330,22 @@ void SolveWindow::reset_task(bool is_solved) {
     gtk_label_set_text(GTK_LABEL(time_result_label_), "--");
 
   gtk_label_set_text(GTK_LABEL(rank_label_), "Rank: ?");
-  std::string prompt;
   switch (task_.first_to_play_) {
     case wq::Color::kNone:
+      gtk_label_set_markup(GTK_LABEL(turn_label_),
+                           "<span size=\"large\">Select answer</span>");
       break;
     case wq::Color::kBlack:
-      prompt = "Black to play";
+      gtk_label_set_markup(GTK_LABEL(turn_label_),
+                           "<span size=\"large\">Black to play</span>");
       break;
     case wq::Color::kWhite:
-      prompt = "White to play";
+      gtk_label_set_markup(GTK_LABEL(turn_label_),
+                           "<span size=\"large\">White to play</span>");
       break;
   }
-  if (!task_.description_.empty()) prompt += " - " + task_.description_;
-  gtk_label_set_text(GTK_LABEL(turn_label_), prompt.c_str());
+  if (!task_.description_.empty())
+    gtk_label_set_text(GTK_LABEL(comment_label_), task_.description_.c_str());
   gtk_label_set_text(GTK_LABEL(task_type_label_),
                      task_type_string(task_.type_));
 
