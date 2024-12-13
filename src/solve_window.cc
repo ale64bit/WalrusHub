@@ -186,6 +186,8 @@ void SolveWindow::on_point_click_normal_task(int r, int c) {
 
   std::string comment;
   if (auto ans_opt = solve_state_->move(wq::Point(r, c), comment)) {
+    if (!comment.empty())
+      gtk_label_set_text(GTK_LABEL(comment_label_), comment.c_str());
     set_solve_result(*ans_opt);
     return;
   }
@@ -262,6 +264,8 @@ void SolveWindow::on_opponent_move(gpointer data) {
 
   std::string comment;
   if (auto ans_opt = win->solve_state_->move(wq::Point(r, c), comment)) {
+    if (!comment.empty())
+      gtk_label_set_text(GTK_LABEL(win->comment_label_), comment.c_str());
     win->set_solve_result(*ans_opt);
     return;
   }
@@ -344,8 +348,7 @@ void SolveWindow::reset_task(bool is_solved) {
                            "<span size=\"large\">White to play</span>");
       break;
   }
-  if (!task_.description_.empty())
-    gtk_label_set_text(GTK_LABEL(comment_label_), task_.description_.c_str());
+  gtk_label_set_text(GTK_LABEL(comment_label_), task_.description_.c_str());
   gtk_label_set_text(GTK_LABEL(task_type_label_),
                      task_type_string(task_.type_));
 
