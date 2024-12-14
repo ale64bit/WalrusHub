@@ -36,7 +36,8 @@
 
 # meson
 builddir
-subprojects
+subprojects/*
+!subprojects/*.wrap
 
 # KataGo
 analysis_logs

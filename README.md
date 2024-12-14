@@ -13,25 +13,17 @@ It depends on GTK4. See [here](https://www.gtk.org/docs/installations/#installat
 
 Steps:
 
-1. Fetch dependencies:
-```
-$ mkdir subprojects
-$ meson wrap install curl
-$ meson wrap install nlohmann_json
-$ meson wrap install sqlite3
-```
-
-2. Create and setup build directory:
+1. Create and setup build directory:
 ```
 $ meson setup builddir
 ```
 
-3. Unzip the task database. For example, on *nix systems:
+2. Unzip the task database. For example, on *nix systems:
 ```
 $ unzip assets/tasks.zip -d assets/
 ```
 
-4. Compile and run:
+3. Compile and run:
 ```
 $ meson compile -C builddir
 $ ./builddir/WalrusHub

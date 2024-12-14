@@ -10,12 +10,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install meson libgtk-4-dev unzip
-      - name: Create subprojects
-        run: |
-          mkdir subprojects
-          meson wrap install curl
-          meson wrap install nlohmann_json
-          meson wrap install sqlite3
       - name: Build
         run: |
           meson setup builddir
