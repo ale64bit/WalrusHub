@@ -22,6 +22,8 @@ jobs:
             mingw-w64-ucrt-x86_64-toolchain
             base-devel
             mingw-w64-ucrt-x86_64-meson
+      - name: Fix certificates
+        run: pip install pip_system_certs
       - name: Create subprojects
         run: |
           mkdir subprojects
