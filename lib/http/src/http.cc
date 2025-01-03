@@ -7,8 +7,10 @@
 
 // Based on https://curl.se/libcurl/c/ghiper.html
 
-struct Http::Conn {
-  Http *http_ = nullptr;
+namespace http {
+
+struct Client::Conn {
+  Client *http_ = nullptr;
   CURL *easy_ = nullptr;
   curl_slist *headers_ = nullptr;
   std::string url_;
@@ -17,8 +19,8 @@ struct Http::Conn {
   ResponseStreamer handler_;
 };
 
-struct Http::Sock {
-  Http *http_;
+struct Client::Sock {
+  Client *http_;
   curl_socket_t sock_fd_;
   CURL *easy_;
   int action_;
@@ -26,7 +28,7 @@ struct Http::Sock {
   GIOChannel *ch_;
   guint ev_;
 
-  Sock(Http *http, curl_socket_t s, CURL *easy, int action)
+  Sock(Client *http, curl_socket_t s, CURL *easy, int action)
       : http_(http), ch_(g_io_channel_unix_new(s)), ev_(0) {
     set(s, easy, action);
     curl_multi_assign(http->multi_, s, this);
@@ -47,15 +49,15 @@ struct Http::Sock {
     easy_ = easy;
     action_ = action;
     if (ev_) g_source_remove(ev_);
-    ev_ = g_io_add_watch(ch_, kind, Http::event_cb, http_);
+    ev_ = g_io_add_watch(ch_, kind, Client::event_cb, http_);
   }
 };
 
-Http::Request::Request(Conn *conn) : conn_(conn) {}
+Client::Request::Request(Conn *conn) : conn_(conn) {}
 
-Http::Request::~Request() { cancel(); }
+Client::Request::~Request() { cancel(); }
 
-void Http::Request::cancel() {
+void Client::Request::cancel() {
   if (conn_) {
     curl_multi_remove_handle(conn_->http_->multi_, conn_->easy_);
     curl_easy_cleanup(conn_->easy_);
@@ -68,10 +70,10 @@ void Http::Request::cancel() {
 struct ResponseCollector {
   long code_ = 0;
   std::stringstream body_;
-  Http::ResponseHandler handler_;
+  Client::ResponseHandler handler_;
 };
 
-Http::Http() : running_count_(0) {
+Client::Client() : running_count_(0) {
   curl_global_init(CURL_GLOBAL_DEFAULT);
   multi_ = curl_multi_init();
 
@@ -81,15 +83,15 @@ Http::Http() : running_count_(0) {
   curl_multi_setopt(multi_, CURLMOPT_TIMERDATA, this);
 }
 
-Http::~Http() {
+Client::~Client() {
   curl_multi_setopt(multi_, CURLMOPT_SOCKETDATA, nullptr);
   curl_multi_cleanup(multi_);
   multi_ = nullptr;
   curl_global_cleanup();
 }
 
-std::unique_ptr<Http::Request> Http::get(std::string url, Headers headers,
-                                         Http::ResponseStreamer handler) {
+std::unique_ptr<Client::Request> Client::get(std::string url, Headers headers,
+                                             Client::ResponseStreamer handler) {
   auto conn = new Conn;
   conn->http_ = this;
   conn->url_ = url;
@@ -126,8 +128,8 @@ std::unique_ptr<Http::Request> Http::get(std::string url, Headers headers,
   return req;
 }
 
-std::unique_ptr<Http::Request> Http::get(std::string url, Headers headers,
-                                         Http::ResponseHandler handler) {
+std::unique_ptr<Client::Request> Client::get(std::string url, Headers headers,
+                                             Client::ResponseHandler handler) {
   auto resp = new ResponseCollector;
   resp->handler_ = handler;
   return get(url, headers,
@@ -141,15 +143,15 @@ std::unique_ptr<Http::Request> Http::get(std::string url, Headers headers,
              });
 }
 
-std::unique_ptr<Http::Request> Http::post(std::string url, Headers headers,
-                                          std::string body,
-                                          ResponseStreamer handler) {
+std::unique_ptr<Client::Request> Client::post(std::string url, Headers headers,
+                                              std::string body,
+                                              ResponseStreamer handler) {
   return custom_req("POST", url, headers, body, handler);
 }
 
-std::unique_ptr<Http::Request> Http::post(std::string url, Headers headers,
-                                          std::string body,
-                                          Http::ResponseHandler handler) {
+std::unique_ptr<Client::Request> Client::post(std::string url, Headers headers,
+                                              std::string body,
+                                              Client::ResponseHandler handler) {
   auto resp = new ResponseCollector;
   resp->handler_ = handler;
   return post(url, headers, body,
@@ -163,15 +165,15 @@ std::unique_ptr<Http::Request> Http::post(std::string url, Headers headers,
               });
 }
 
-std::unique_ptr<Http::Request> Http::put(std::string url, Headers headers,
-                                         std::string body,
-                                         ResponseStreamer handler) {
+std::unique_ptr<Client::Request> Client::put(std::string url, Headers headers,
+                                             std::string body,
+                                             ResponseStreamer handler) {
   return custom_req("PUT", url, headers, body, handler);
 }
 
-std::unique_ptr<Http::Request> Http::put(std::string url, Headers headers,
-                                         std::string body,
-                                         Http::ResponseHandler handler) {
+std::unique_ptr<Client::Request> Client::put(std::string url, Headers headers,
+                                             std::string body,
+                                             Client::ResponseHandler handler) {
   auto resp = new ResponseCollector;
   resp->handler_ = handler;
   return put(url, headers, body,
@@ -185,11 +187,11 @@ std::unique_ptr<Http::Request> Http::put(std::string url, Headers headers,
              });
 }
 
-std::unique_ptr<Http::Request> Http::custom_req(const char *method,
-                                                std::string url,
-                                                Headers headers,
-                                                std::string body,
-                                                ResponseStreamer handler) {
+std::unique_ptr<Client::Request> Client::custom_req(const char *method,
+                                                    std::string url,
+                                                    Headers headers,
+                                                    std::string body,
+                                                    ResponseStreamer handler) {
   auto conn = new Conn;
   conn->http_ = this;
   conn->url_ = url;
@@ -231,10 +233,10 @@ std::unique_ptr<Http::Request> Http::custom_req(const char *method,
   return req;
 }
 
-int Http::socket_function_cb(CURL *e, curl_socket_t s, int action,
-                             void *user_ptr, void *sock_ptr) {
+int Client::socket_function_cb(CURL *e, curl_socket_t s, int action,
+                               void *user_ptr, void *sock_ptr) {
   if (!user_ptr) return -1;
-  Http *http = reinterpret_cast<Http *>(user_ptr);
+  Client *http = reinterpret_cast<Client *>(user_ptr);
   Sock *sock = reinterpret_cast<Sock *>(sock_ptr);
   if (action == CURL_POLL_REMOVE) {
     if (sock) delete sock;
@@ -246,8 +248,8 @@ int Http::socket_function_cb(CURL *e, curl_socket_t s, int action,
   return 0;
 }
 
-gboolean Http::timer_cb(gpointer data) {
-  Http *http = reinterpret_cast<Http *>(data);
+gboolean Client::timer_cb(gpointer data) {
+  Client *http = reinterpret_cast<Client *>(data);
   if (auto ret = curl_multi_socket_action(http->multi_, CURL_SOCKET_TIMEOUT, 0,
                                           &http->running_count_);
       ret != CURLM_OK) {
@@ -259,15 +261,15 @@ gboolean Http::timer_cb(gpointer data) {
   return FALSE;
 }
 
-int Http::timer_function_cb(CURLM * /*multi*/, long timeout_ms,
-                            void *user_ptr) {
-  Http *http = reinterpret_cast<Http *>(user_ptr);
+int Client::timer_function_cb(CURLM * /*multi*/, long timeout_ms,
+                              void *user_ptr) {
+  Client *http = reinterpret_cast<Client *>(user_ptr);
   if (timeout_ms >= 0)
-    http->timer_event_ = g_timeout_add(timeout_ms, Http::timer_cb, user_ptr);
+    http->timer_event_ = g_timeout_add(timeout_ms, Client::timer_cb, user_ptr);
   return 0;
 }
 
-size_t Http::write_cb(void *ptr, size_t size, size_t nmemb, void *user_ptr) {
+size_t Client::write_cb(void *ptr, size_t size, size_t nmemb, void *user_ptr) {
   Conn *conn = reinterpret_cast<Conn *>(user_ptr);
   const size_t real_size = size * nmemb;
 
@@ -278,8 +280,9 @@ size_t Http::write_cb(void *ptr, size_t size, size_t nmemb, void *user_ptr) {
   return real_size;
 }
 
-gboolean Http::event_cb(GIOChannel *ch, GIOCondition condition, gpointer data) {
-  Http *http = reinterpret_cast<Http *>(data);
+gboolean Client::event_cb(GIOChannel *ch, GIOCondition condition,
+                          gpointer data) {
+  Client *http = reinterpret_cast<Client *>(data);
 
   const int fd = g_io_channel_unix_get_fd(ch);
   const int action = ((condition & G_IO_IN) ? CURL_CSELECT_IN : 0) |
@@ -303,7 +306,7 @@ gboolean Http::event_cb(GIOChannel *ch, GIOCondition condition, gpointer data) {
   return FALSE;
 }
 
-void Http::check_handles() {
+void Client::check_handles() {
   int msgs_left;
   CURLMsg *msg;
   while ((msg = curl_multi_info_read(multi_, &msgs_left))) {
@@ -318,3 +321,5 @@ void Http::check_handles() {
     conn->request_->cancel();
   }
 }
+
+}  // namespace http

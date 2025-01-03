@@ -1,5 +1,4 @@
-#ifndef GTK_GOBAN_H_
-#define GTK_GOBAN_H_
+#pragma once
 
 #include <gtk/gtk.h>
 
@@ -8,7 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "board.h"
+#include "wq.h"
+
+namespace ui {
 
 enum class AnnotationType {
   kNone,
@@ -23,11 +24,11 @@ struct AnnotationState {
   GdkRGBA color;
 };
 
-class GtkGoban {
+class GtkBoard {
   using PointCallback = std::function<void(int, int)>;
 
  public:
-  GtkGoban(std::string id, int board_size, int r1, int c1, int r2, int c2,
+  GtkBoard(std::string id, int board_size, int r1, int c1, int r2, int c2,
            std::mt19937 &rand_gen);
   GtkWidget *widget() const;
 
@@ -53,7 +54,7 @@ class GtkGoban {
   int col_offset_;
   int board_border_mask_;
   std::vector<std::vector<AnnotationState>> annotations_;
-  std::vector<std::vector<std::tuple<GtkGoban *, int, int>>> point_coords_;
+  std::vector<std::vector<std::tuple<GtkBoard *, int, int>>> point_coords_;
   int black_stone_tex_count_ = 0;
   GdkTexture *const *black_stone_tex_ = nullptr;
   int white_stone_tex_count_ = 0;
@@ -79,4 +80,4 @@ class GtkGoban {
   static void on_point_leave(GtkGestureClick *self, gpointer user_data);
 };
 
-#endif
+}  // namespace ui

@@ -9,11 +9,11 @@
 #include <vector>
 
 #include "app_context.h"
-#include "board.h"
-#include "gtkgoban.h"
+#include "gtk_board.h"
 #include "http.h"
 #include "task.h"
 #include "window.h"
+#include "wq.h"
 
 namespace ui {
 
@@ -49,7 +49,7 @@ class SolveWindow : public Window {
   GtkWidget* turn_label_;
   GtkWidget* comment_label_;
   GtkWidget* task_type_label_;
-  std::unique_ptr<GtkGoban> goban_;
+  std::unique_ptr<GtkBoard> goban_;
   GtkWidget* solve_stats_label_;
   GtkWidget* time_result_label_;
   GtkWidget* reset_button_;

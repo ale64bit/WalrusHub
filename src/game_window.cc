@@ -11,7 +11,7 @@ GameWindow::GameWindow(AppContext& ctx, int board_size) : Window(ctx) {
   // Board
   board_ = std::make_unique<wq::Board>(board_size, board_size);
   goban_ =
-      std::make_unique<GtkGoban>("main_board", board_size, 0, 0, board_size - 1,
+      std::make_unique<GtkBoard>("main_board", board_size, 0, 0, board_size - 1,
                                  board_size - 1, ctx_.rand());
   goban_->set_board_texture(ctx.board_texture());
   goban_->set_black_stone_textures(ctx.black_stone_textures().data(),
@@ -55,7 +55,7 @@ GameWindow::GameWindow(AppContext& ctx, int board_size) : Window(ctx) {
   gtk_box_append(GTK_BOX(navigation_bar_), last_move_button);
 }
 
-GtkGoban& GameWindow::board_widget() { return *goban_; }
+GtkBoard& GameWindow::board_widget() { return *goban_; }
 
 GtkWidget* GameWindow::navigation_bar_widget() { return navigation_bar_; }
 

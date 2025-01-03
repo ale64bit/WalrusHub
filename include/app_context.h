@@ -38,7 +38,7 @@ class AppContext {
   GtkMediaStream *capture_many_sound() const { return sound.capture_many; }
   TaskDB &tasks() { return task_db_; }
   StatsDB &stats() { return stats_db_; }
-  Http &http() { return http_; }
+  http::Client &http() { return http_; }
   GtkApplication *gtk_app() { return app_; }
   std::mt19937 &rand() { return rand_gen_; }
   void reload_katago();
@@ -64,7 +64,7 @@ class AppContext {
   GtkApplication *app_;
   fs::path config_filename_;
   GKeyFile *config_key_file_;
-  Http http_;
+  http::Client http_;
   TaskDB task_db_;
   StatsDB stats_db_;
   std::unique_ptr<KataGoClient> katago_client_;

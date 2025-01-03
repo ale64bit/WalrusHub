@@ -6,9 +6,8 @@
 #include <optional>
 
 #include "app_context.h"
-#include "board.h"
 #include "game_window.h"
-#include "gtkgoban.h"
+#include "wq.h"
 
 namespace ui {
 

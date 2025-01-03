@@ -4,7 +4,6 @@
 #include <random>
 #include <sstream>
 
-#include "board.h"
 #include "color.h"
 #include "log.h"
 #include "play_ai_preset_window.h"
@@ -301,7 +300,7 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
       game_res << "Draw";
       break;
     default:
-      game_res << wq::ColorShortString(winner) << "+";
+      game_res << wq::color_short_string(winner) << "+";
       if (score_lead == 0)
         game_res << "R";
       else

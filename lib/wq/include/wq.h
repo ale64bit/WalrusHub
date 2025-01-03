@@ -1,5 +1,4 @@
-#ifndef BOARD_H_
-#define BOARD_H_
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -16,8 +15,8 @@ enum class Color {
   kWhite = 2,
 };
 
-const char *ColorString(Color col);
-const char *ColorShortString(Color col);
+const char *color_string(Color col);
+const char *color_short_string(Color col);
 
 using Point = std::pair<int, int>;
 using PointList = std::vector<Point>;
@@ -54,5 +53,3 @@ class Board {
 };
 
 }  // namespace wq
-
-#endif

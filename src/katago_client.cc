@@ -71,7 +71,7 @@ std::string KataGoClient::query(Query q, QueryCallback cb) {
     for (const auto &[col, p] : q.initial_stones) {
       const auto &[r, c] = p;
       j["initialStones"].push_back(json::array(
-          {wq::ColorShortString(col),
+          {wq::color_short_string(col),
            "(" + std::to_string(c) + "," + std::to_string(r) + ")"}));
     }
   }
@@ -81,7 +81,7 @@ std::string KataGoClient::query(Query q, QueryCallback cb) {
         (p == wq::kPass)
             ? "pass"
             : ("(" + std::to_string(c) + "," + std::to_string(r) + ")");
-    j["moves"].push_back(json::array({wq::ColorShortString(col), move_str}));
+    j["moves"].push_back(json::array({wq::color_short_string(col), move_str}));
   }
   if (!q.analyze_turns.empty()) j["analyze_turns"] = q.analyze_turns;
 

@@ -1,9 +1,8 @@
-#include "gtkgoban.h"
+#include "gtk_board.h"
 
 #include <cassert>
 #include <map>
 
-#include "board.h"
 #include "log.h"
 
 static const std::map<int, std::vector<std::pair<int, int>>>
@@ -34,7 +33,9 @@ static const std::map<int, std::vector<std::pair<int, int>>>
         },
 };
 
-GtkGoban::GtkGoban(std::string id, int board_size, int r1, int c1, int r2,
+namespace ui {
+
+GtkBoard::GtkBoard(std::string id, int board_size, int r1, int c1, int r2,
                    int c2, std::mt19937 &rand_gen)
     : rand_gen_(rand_gen), id_(id), board_size_(0) {
   grid_ = (GtkGrid *)gtk_grid_new();
@@ -66,31 +67,31 @@ GtkGoban::GtkGoban(std::string id, int board_size, int r1, int c1, int r2,
   gtk_aspect_frame_set_child(frame_, (GtkWidget *)overlay_);
 }
 
-GtkWidget *GtkGoban::widget() const { return (GtkWidget *)frame_; }
+GtkWidget *GtkBoard::widget() const { return (GtkWidget *)frame_; }
 
-void GtkGoban::set_board_texture(GdkTexture *tex) {
+void GtkBoard::set_board_texture(GdkTexture *tex) {
   auto img = gtk_image_new_from_paintable((GdkPaintable *)tex);
   gtk_overlay_set_child(overlay_, GTK_WIDGET(img));
   gtk_overlay_set_clip_overlay(overlay_, GTK_WIDGET(img), true);
 }
 
-void GtkGoban::set_black_stone_textures(GdkTexture *const *tex, int tex_count) {
+void GtkBoard::set_black_stone_textures(GdkTexture *const *tex, int tex_count) {
   black_stone_tex_count_ = tex_count;
   black_stone_tex_ = tex;
 }
 
-void GtkGoban::set_white_stone_textures(GdkTexture *const *tex, int tex_count) {
+void GtkBoard::set_white_stone_textures(GdkTexture *const *tex, int tex_count) {
   white_stone_tex_count_ = tex_count;
   white_stone_tex_ = tex;
 }
 
-void GtkGoban::set_on_point_click(PointCallback cb) { on_point_click_ = cb; }
+void GtkBoard::set_on_point_click(PointCallback cb) { on_point_click_ = cb; }
 
-void GtkGoban::set_on_point_enter(PointCallback cb) { on_point_enter_ = cb; }
+void GtkBoard::set_on_point_enter(PointCallback cb) { on_point_enter_ = cb; }
 
-void GtkGoban::set_on_point_leave(PointCallback cb) { on_point_leave_ = cb; }
+void GtkBoard::set_on_point_leave(PointCallback cb) { on_point_leave_ = cb; }
 
-void GtkGoban::set_point(int r, int c, wq::Color col) {
+void GtkBoard::set_point(int r, int c, wq::Color col) {
   r -= row_offset_;
   c -= col_offset_;
   auto overlay = (GtkOverlay *)gtk_grid_get_child_at(grid_, c, r);
@@ -114,7 +115,7 @@ void GtkGoban::set_point(int r, int c, wq::Color col) {
   }
 }
 
-void GtkGoban::set_annotation(int r, int c, AnnotationType a) {
+void GtkBoard::set_annotation(int r, int c, AnnotationType a) {
   r -= row_offset_;
   c -= col_offset_;
   annotations_[r][c].type = a;
@@ -123,7 +124,7 @@ void GtkGoban::set_annotation(int r, int c, AnnotationType a) {
   gtk_widget_queue_draw(annotation_area);
 }
 
-void GtkGoban::set_annotation_color(int r, int c, GdkRGBA color) {
+void GtkBoard::set_annotation_color(int r, int c, GdkRGBA color) {
   r -= row_offset_;
   c -= col_offset_;
   annotations_[r][c].color = color;
@@ -132,7 +133,7 @@ void GtkGoban::set_annotation_color(int r, int c, GdkRGBA color) {
   gtk_widget_queue_draw(annotation_area);
 }
 
-void GtkGoban::set_text(int r, int c, std::string text) {
+void GtkBoard::set_text(int r, int c, std::string text) {
   r -= row_offset_;
   c -= col_offset_;
   auto overlay = (GtkOverlay *)gtk_grid_get_child_at(grid_, c, r);
@@ -141,7 +142,7 @@ void GtkGoban::set_text(int r, int c, std::string text) {
   gtk_label_set_text(text_area, text.c_str());
 }
 
-void GtkGoban::set_text_color(int r, int c, GdkRGBA color) {
+void GtkBoard::set_text_color(int r, int c, GdkRGBA color) {
   r -= row_offset_;
   c -= col_offset_;
   auto overlay = (GtkOverlay *)gtk_grid_get_child_at(grid_, c, r);
@@ -156,9 +157,9 @@ void GtkGoban::set_text_color(int r, int c, GdkRGBA color) {
   }
 }
 
-void GtkGoban::board_lines_draw_function(GtkDrawingArea *, cairo_t *cr, int w,
+void GtkBoard::board_lines_draw_function(GtkDrawingArea *, cairo_t *cr, int w,
                                          int h, gpointer data) {
-  GtkGoban *goban = (GtkGoban *)data;
+  GtkBoard *goban = (GtkBoard *)data;
 
   // Dimensions
   const double psize = w / double(goban->board_size_);
@@ -217,7 +218,7 @@ void GtkGoban::board_lines_draw_function(GtkDrawingArea *, cairo_t *cr, int w,
   }
 }
 
-void GtkGoban::annotation_draw_function(GtkDrawingArea *, cairo_t *cr, int w,
+void GtkBoard::annotation_draw_function(GtkDrawingArea *, cairo_t *cr, int w,
                                         int h, gpointer data) {
   const AnnotationState annotation = *reinterpret_cast<AnnotationState *>(data);
 
@@ -258,9 +259,9 @@ void GtkGoban::annotation_draw_function(GtkDrawingArea *, cairo_t *cr, int w,
   }
 }
 
-void GtkGoban::on_board_resized(GtkDrawingArea *, gint width, gint,
+void GtkBoard::on_board_resized(GtkDrawingArea *, gint width, gint,
                                 gpointer user_data) {
-  GtkGoban *goban = (GtkGoban *)user_data;
+  GtkBoard *goban = (GtkBoard *)user_data;
   const auto font_size = width * 512 / goban->board_size_;
   for (int i = 0; i < goban->board_size_; ++i) {
     for (int j = 0; j < goban->board_size_; ++j) {
@@ -276,25 +277,25 @@ void GtkGoban::on_board_resized(GtkDrawingArea *, gint width, gint,
   }
 }
 
-void GtkGoban::on_point_pressed(GtkGestureClick *, gint /*n_press*/,
+void GtkBoard::on_point_pressed(GtkGestureClick *, gint /*n_press*/,
                                 gdouble /*x*/, gdouble /*y*/,
                                 gpointer user_data) {
-  const auto &[ptr, r, c] = *(std::tuple<GtkGoban *, int, int> *)user_data;
+  const auto &[ptr, r, c] = *(std::tuple<GtkBoard *, int, int> *)user_data;
   if (ptr->on_point_click_) ptr->on_point_click_(r, c);
 }
 
-void GtkGoban::on_point_enter(GtkGestureClick *, gdouble /*x*/, gdouble /*y*/,
+void GtkBoard::on_point_enter(GtkGestureClick *, gdouble /*x*/, gdouble /*y*/,
                               gpointer user_data) {
-  const auto &[ptr, r, c] = *(std::tuple<GtkGoban *, int, int> *)user_data;
+  const auto &[ptr, r, c] = *(std::tuple<GtkBoard *, int, int> *)user_data;
   if (ptr->on_point_enter_) ptr->on_point_enter_(r, c);
 }
 
-void GtkGoban::on_point_leave(GtkGestureClick *, gpointer user_data) {
-  const auto &[ptr, r, c] = *(std::tuple<GtkGoban *, int, int> *)user_data;
+void GtkBoard::on_point_leave(GtkGestureClick *, gpointer user_data) {
+  const auto &[ptr, r, c] = *(std::tuple<GtkBoard *, int, int> *)user_data;
   if (ptr->on_point_leave_) ptr->on_point_leave_(r, c);
 }
 
-void GtkGoban::resize(int board_size, int r1, int c1, int r2, int c2) {
+void GtkBoard::resize(int board_size, int r1, int c1, int r2, int c2) {
   // Clear current board data
   clear();
   for (int i = board_size_ - 1; i >= 0; --i) {
@@ -379,7 +380,7 @@ void GtkGoban::resize(int board_size, int r1, int c1, int r2, int c2) {
   gtk_widget_queue_draw(GTK_WIDGET(board_lines_));
 }
 
-void GtkGoban::clear() {
+void GtkBoard::clear() {
   for (int i = 0; i < board_size_; ++i) {
     for (int j = 0; j < board_size_; ++j) {
       const int ii = row_offset_ + i;
@@ -389,4 +390,6 @@ void GtkGoban::clear() {
       set_annotation(ii, jj, AnnotationType::kNone);
     }
   }
+}
+
 }

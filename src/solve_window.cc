@@ -54,7 +54,7 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
   //================================================================================
 
   board_ = std::make_unique<wq::Board>(19, 19);
-  goban_ = std::make_unique<GtkGoban>("testpan", 19, 0, 0, 18, 18, ctx_.rand());
+  goban_ = std::make_unique<GtkBoard>("testpan", 19, 0, 0, 18, 18, ctx_.rand());
   goban_->set_board_texture(ctx.board_texture());
   goban_->set_black_stone_textures(ctx.black_stone_textures().data(),
                                    ctx.black_stone_textures().size());

@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include "board.h"
-#include "gtkgoban.h"
+#include "gtk_board.h"
 #include "window.h"
+#include "wq.h"
 
 namespace ui {
 
@@ -19,7 +19,7 @@ class GameWindow : public Window {
     kMoveFlagSound = 2,
   };
 
-  GtkGoban& board_widget();
+  GtkBoard& board_widget();
   GtkWidget* navigation_bar_widget();
   wq::Board& board();
   wq::Color turn() const;
@@ -47,7 +47,7 @@ class GameWindow : public Window {
   wq::MoveList variation_moves_;
 
   // Widgets
-  std::unique_ptr<GtkGoban> goban_;
+  std::unique_ptr<GtkBoard> goban_;
   GtkWidget* navigation_bar_;
 
   void play_move_sound(size_t capture_count);

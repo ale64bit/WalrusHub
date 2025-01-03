@@ -18,6 +18,7 @@ project_benchmark_sources = []
 include_dirs = [include_directories('include')]
 
 subdir('include')
+subdir('lib')
 subdir('src')
 
 exe = executable(
@@ -32,6 +33,9 @@ exe = executable(
     dependency('libcurl'),
     dependency('nlohmann_json'),
     dependency('sqlite3'),
+    http_dep,
+    log_dep,
+    wq_dep,
   ],
 )
 

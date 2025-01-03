@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "board.h"
+#include "wq.h"
 
 using json = nlohmann::json;
 

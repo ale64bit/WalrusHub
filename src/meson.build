@@ -1,11 +1,9 @@
 main_source = files(
     'app_context.cc',
-    'board.cc',
     'editor_window.cc',
     'game_window.cc',
+    'gtk_board.cc',
     'gtk_eval_bar.cc',
-    'gtkgoban.cc',
-    'http.cc',
     'katago_client.cc',
     'main_window.cc',
     'play_ai_preset_window.cc',

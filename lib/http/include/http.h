@@ -1,7 +1,7 @@
 #pragma once
 
 #include <curl/curl.h>
-#include <gtk/gtk.h>
+#include <glib.h>
 
 #include <functional>
 #include <initializer_list>
@@ -11,7 +11,9 @@
 #include <string_view>
 #include <utility>
 
-class Http {
+namespace http {
+
+class Client {
   struct Conn;
   struct Sock;
 
@@ -32,8 +34,8 @@ class Http {
     Conn *conn_ = nullptr;
   };
 
-  Http();
-  ~Http();
+  Client();
+  ~Client();
 
   std::unique_ptr<Request> get(std::string url, Headers headers,
                                ResponseStreamer h);
@@ -66,3 +68,5 @@ class Http {
   static gboolean event_cb(GIOChannel *ch, GIOCondition condition,
                            gpointer data);
 };
+
+}

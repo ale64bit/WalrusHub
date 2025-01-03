@@ -1,4 +1,4 @@
-#include "board.h"
+#include "wq.h"
 
 #include <array>
 #include <utility>
@@ -22,7 +22,7 @@ static Color fast_inv(Color col) {
   return col == Color::kBlack ? Color::kWhite : Color::kBlack;
 }
 
-const char *ColorString(Color col) {
+const char *color_string(Color col) {
   switch (col) {
     case Color::kNone:
       return "none";
@@ -33,7 +33,7 @@ const char *ColorString(Color col) {
   }
 }
 
-const char *ColorShortString(Color col) {
+const char *color_short_string(Color col) {
   switch (col) {
     case Color::kNone:
       return "-";

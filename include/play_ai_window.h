@@ -5,12 +5,11 @@
 #include <memory>
 
 #include "app_context.h"
-#include "board.h"
 #include "game_window.h"
 #include "gtk_eval_bar.h"
-#include "gtkgoban.h"
 #include "katago_client.h"
 #include "task.h"
+#include "wq.h"
 
 namespace ui {
 
