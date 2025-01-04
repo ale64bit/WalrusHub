@@ -18,6 +18,16 @@ static const std::map<int, std::vector<std::pair<int, int>>>
             },
         },
         {
+            13,
+            {
+                {3, 3},
+                {3, 9},
+                {9, 3},
+                {9, 9},
+                {6, 6},
+            },
+        },
+        {
             19,
             {
                 {3, 3},
@@ -392,4 +402,4 @@ void GtkBoard::clear() {
   }
 }
 
-}
+}  // namespace ui
