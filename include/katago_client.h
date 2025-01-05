@@ -86,6 +86,7 @@ class KataGoClient {
   std::array<uint8_t, 8 << 10> out_buf_;
   int query_id_ = 0;
   std::unordered_map<std::string, QueryCallback> queries_;
+  std::unordered_map<std::string, int> query_pending_responses_;
 
   void process_cur_line();
 
