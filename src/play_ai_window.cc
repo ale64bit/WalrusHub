@@ -1,6 +1,8 @@
 #include "play_ai_window.h"
 
 #include <cctype>
+#include <iomanip>
+#include <numeric>
 #include <random>
 #include <sstream>
 
@@ -52,7 +54,35 @@ PlayAIWindow::PlayAIWindow(AppContext& ctx, PlayStyle play_style, Rank rank,
   g_signal_connect(show_ai_variation_button_, "clicked",
                    G_CALLBACK(on_show_ai_variation_clicked), this);
 
-  gtk_box_append(GTK_BOX(box), board_widget().widget());
+  move_table_.set_selection_func([this](int i) {
+    goto_move(i);
+    evaluate_current_position();
+  });
+
+  move_table_.add_column("#", &PlayAIWindow::move_table_column_number);
+  move_table_.add_column("Move", &PlayAIWindow::move_table_column_move);
+  move_table_.add_column("Loss", &PlayAIWindow::move_table_column_loss);
+  gtk_widget_set_visible(move_table_, false);
+
+  GtkWidget* center_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+
+  GtkWidget* board_frame = gtk_frame_new(nullptr);
+  gtk_frame_set_child(GTK_FRAME(board_frame), board_widget().widget());
+
+  GtkWidget* move_table_frame = gtk_scrolled_window_new();
+  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(move_table_frame),
+                                move_table_);
+  gtk_scrolled_window_set_has_frame(GTK_SCROLLED_WINDOW(move_table_frame),
+                                    true);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(move_table_frame),
+                                 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+
+  gtk_box_append(GTK_BOX(center_box), board_frame);
+  gtk_box_append(GTK_BOX(center_box), move_table_frame);
+  gtk_widget_set_hexpand(move_table_, false);
+  gtk_widget_set_halign(move_table_, GTK_ALIGN_END);
+
+  gtk_box_append(GTK_BOX(box), center_box);
 
   navigation_bar_ = gtk_action_bar_new();
   gtk_action_bar_set_center_widget(GTK_ACTION_BAR(navigation_bar_),
@@ -319,6 +349,55 @@ void PlayAIWindow::finish_game(wq::Color winner, double score_lead) {
         (winner != wq::Color::kNone && winner != my_color_) ? 1 : 0);
     Window::update_group(PlayAIPresetWindow::kPlayAIPresetWindowGroup);
   }
+
+  // Evaluate full game
+  gtk_widget_set_visible(move_table_, true);
+
+  KataGoClient::Query full_game_query = katago_query_;
+  full_game_query.include_ownership = false;
+  full_game_query.override_settings = json::object();
+  full_game_query.moves = moves();
+
+  int move_num = 1;
+  turn_score_lead_.resize(1, std::numeric_limits<float>::infinity());
+  full_game_query.analyze_turns.resize(1, 0);
+  for (const auto& mv : moves()) {
+    turn_score_lead_.push_back(std::numeric_limits<float>::infinity());
+    full_game_query.analyze_turns.push_back(move_num);
+    move_table_.add_row(
+        MoveTableEntry(move_num, mv, std::numeric_limits<float>::infinity()));
+    move_num++;
+  }
+
+  ctx_.katago()->query(
+      full_game_query,
+      [this](KataGoClient::Response resp, std::optional<std::string> error) {
+        if (error) {
+          LOG(ERROR) << "katago: " << *error;
+          return;
+        }
+        const int i = resp.turn_number;
+        turn_score_lead_[i] = resp.root_info.score_lead;
+        if (i > 0 &&
+            turn_score_lead_[i - 1] != std::numeric_limits<float>::infinity()) {
+          compute_point_loss(i);
+        }
+        if (i + 1 < (int)turn_score_lead_.size() &&
+            turn_score_lead_[i + 1] != std::numeric_limits<float>::infinity()) {
+          compute_point_loss(i + 1);
+        }
+      });
+}
+
+void PlayAIWindow::compute_point_loss(int i) {
+  const auto mvs = moves();
+  float point_loss = .0f;
+  const auto& [col, _] = mvs[i - 1];
+  const float sl0 = turn_score_lead_[i - 1];
+  const float sl1 = turn_score_lead_[i];
+  if (col == wq::Color::kBlack && sl1 < sl0) point_loss = std::abs(sl1 - sl0);
+  if (col == wq::Color::kWhite && sl1 > sl0) point_loss = std::abs(sl1 - sl0);
+  move_table_.update_row(i - 1, MoveTableEntry(i, mvs[i - 1], -point_loss));
 }
 
 void PlayAIWindow::on_show_game_result(GObject* src, GAsyncResult* res,
@@ -370,6 +449,49 @@ void PlayAIWindow::on_show_ai_variation_clicked(GtkWidget* /*self*/,
     win->move(r, c, kMoveFlagVariation);
   }
   win->evaluate_current_position();
+}
+
+GtkWidget* PlayAIWindow::move_table_column_number(const MoveTableEntry& entry) {
+  return gtk_label_new(std::to_string(std::get<0>(entry)).c_str());
+}
+
+GtkWidget* PlayAIWindow::move_table_column_move(const MoveTableEntry& entry) {
+  const auto& [col, pnt] = std::get<1>(entry);
+  const auto& [r, c] = pnt;
+  std::ostringstream ss;
+  ss << "<span color='" << (col == wq::Color::kWhite ? "white" : "black")
+     << u8"'>⬤</span><span> " << (char)('a' + c) << (char)('a' + r)
+     << "</span>";
+
+  GtkWidget* label = gtk_label_new("");
+  gtk_label_set_markup(GTK_LABEL(label), ss.str().c_str());
+  return label;
+}
+
+GtkWidget* PlayAIWindow::move_table_column_loss(const MoveTableEntry& entry) {
+  const float point_loss = std::get<2>(entry);
+  if (point_loss == std::numeric_limits<float>::infinity())
+    return gtk_label_new("-");
+
+  std::ostringstream ss;
+  ss << "<span color='";
+  if (point_loss <= -12)
+    ss << "darkorchid";
+  else if (point_loss <= -8)
+    ss << "crimson";
+  else if (point_loss <= -5)
+    ss << "orange";
+  else if (point_loss <= -3)
+    ss << "gold";
+  else if (point_loss < -1.0f)
+    ss << "greenyellow";
+  else
+    ss << "limegreen";
+  ss << "'>" << std::fixed << std::setprecision(2) << point_loss << "</span>";
+
+  GtkWidget* label = gtk_label_new("");
+  gtk_label_set_markup(GTK_LABEL(label), ss.str().c_str());
+  return label;
 }
 
 }  // namespace ui
