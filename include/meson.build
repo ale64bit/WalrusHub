@@ -5,6 +5,7 @@ project_header_files += files(
     'game_window.h',
     'gtk_board.h',
     'gtk_eval_bar.h',
+    'gtk_table.h',
     'katago_client.h',
     'main_window.h',
     'play_ai_preset_window.h',
