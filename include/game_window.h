@@ -29,6 +29,7 @@ class GameWindow : public Window {
   void set_board_size(int board_size);
   bool move(int r, int c, MoveFlag flags);
   void pass();
+  void goto_move(int move_number);
   bool goto_prev_move();
   bool goto_next_move();
   bool goto_mainline();

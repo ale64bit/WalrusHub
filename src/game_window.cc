@@ -152,6 +152,11 @@ void GameWindow::pass() {
   toggle_turn();
 }
 
+void GameWindow::goto_move(int move_number) {
+  while (cur_move_ < move_number && goto_next_move());
+  while (cur_move_ > move_number && goto_prev_move());
+}
+
 bool GameWindow::goto_prev_move() {
   if (variation_moves_.empty() && cur_move_ == 0) return false;
 
