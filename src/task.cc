@@ -297,6 +297,11 @@ std::optional<Task> TaskDB::get_task(int64_t id) const {
   return task;
 }
 
+static inline bool valid_sgf_point(int board_size, std::string_view p) {
+  return p.size() == 2 && 'a' <= p[0] && p[0] <= ('a' + board_size - 1) &&
+         'a' <= p[1] && p[1] <= ('a' + board_size - 1);
+}
+
 int TaskDB::get_task_cb(void *out, int /*column_count*/, char **column_value,
                         char ** /*column_name*/) {
   Task task;
@@ -331,7 +336,8 @@ int TaskDB::get_task_cb(void *out, int /*column_count*/, char **column_value,
   if (column_value[14]) {
     json j = json::parse(column_value[14]);
     for (const auto &[p, label] : j.items()) {
-      task.labels_[decode_point(p)] = label;
+      if (valid_sgf_point(task.board_size_, p))
+        task.labels_[decode_point(p)] = label;
     }
   }
 
