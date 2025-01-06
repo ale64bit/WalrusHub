@@ -21,11 +21,15 @@ class SolveWindow : public Window {
  public:
   SolveWindow(AppContext& ctx, SolvePreset preset,
               std::optional<std::pair<int, Rank>> tag_ref);
+  SolveWindow(AppContext& ctx, std::string description,
+              const std::vector<Task>& tasks, int time_limit_sec);
   ~SolveWindow();
 
  private:
-  const SolvePreset preset_;
-  const std::optional<std::pair<int, Rank>> tag_ref_;
+  void init();
+
+  SolvePreset preset_;
+  std::optional<std::pair<int, Rank>> tag_ref_;
   std::vector<int64_t> task_ids_;
 
   // State

@@ -39,5 +39,7 @@ $ ./builddir/WalrusHub
 ![Alt text](doc/time_challenge_screenshot.png?raw=true "Time challenge solving")
 ### Solve 101weiqi tasks in training mode
 ![Alt text](doc/training_screenshot.png?raw=true "Training")
+### Solve classic books
+![Alt text](doc/books_screenshot.png?raw=true "Books")
 ### Keep track of your solve stats
 ![Alt text](doc/stats_screenshot.png?raw=true "Statistics")

@@ -150,6 +150,29 @@ bool Board::undo(int &r_out, int &c_out, PointList &added) {
   return true;
 }
 
+const wq::PointList &Board::star_points(int board_size) {
+  static const wq::PointList empty;
+  static const wq::PointList sp9{
+      {2, 2}, {2, 6}, {6, 2}, {6, 6}, {4, 4},
+  };
+  static const wq::PointList sp13{
+      {3, 3}, {3, 9}, {9, 3}, {9, 9}, {6, 6},
+  };
+  static const wq::PointList sp19{
+      {3, 3},  {3, 9},  {3, 15}, {9, 3},   {9, 9},
+      {9, 15}, {15, 3}, {15, 9}, {15, 15},
+  };
+  switch (board_size) {
+    case 9:
+      return sp9;
+    case 13:
+      return sp13;
+    case 19:
+      return sp19;
+  }
+  return empty;
+}
+
 bool Board::inside(int r, int c) const {
   return 0 <= r && r < row_count_ && 0 <= c && c < col_count_;
 }

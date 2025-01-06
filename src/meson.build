@@ -1,5 +1,6 @@
 main_source = files(
     'app_context.cc',
+    'books_window.cc',
     'editor_window.cc',
     'game_window.cc',
     'gtk_board.cc',

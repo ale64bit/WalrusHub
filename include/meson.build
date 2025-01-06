@@ -1,5 +1,6 @@
 project_header_files += files(
     'app_context.h',
+    'books_window.h',
     'color.h',
     'editor_window.h',
     'game_window.h',

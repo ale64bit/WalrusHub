@@ -42,6 +42,34 @@ constexpr const char *kTaskDBSchema = R"(
     FOREIGN KEY(task_id) REFERENCES tasks(id),
     PRIMARY KEY(tag_id, task_id)
   );
+
+  CREATE TABLE IF NOT EXISTS books(
+    id          INTEGER PRIMARY KEY,
+    title       TEXT NOT NULL,
+    title_en    TEXT NOT NULL,
+    description TEXT NOT NULL,
+    url         TEXT NOT NULL,
+    min_rank    INTEGER NOT NULL,
+    max_rank    INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS book_chapters(
+    book_id INTEGER,
+    id      INTEGER,
+    title   TEXT NOT NULL,
+    FOREIGN KEY(book_id) REFERENCES books(id),
+    PRIMARY KEY(book_id, id)
+  );
+
+  CREATE TABLE IF NOT EXISTS book_tasks(
+    book_id    INTEGER,
+    chapter_id INTEGER,
+    task_id    INTEGER,
+    FOREIGN KEY(book_id) REFERENCES books(id),
+    FOREIGN KEY(book_id, chapter_id) REFERENCES book_chapters(book_id, id),
+    FOREIGN KEY(task_id) REFERENCES tasks(id),
+    PRIMARY KEY(book_id, chapter_id, task_id)
+  );
 )";
 
 TaskDB::TaskDB(const char *path) {
@@ -390,6 +418,148 @@ json TaskDB::encode_metadata(const Task &task) {
   json ret = json::object();
   for (const auto &[k, v] : task.metadata_) ret[k] = v;
   return ret;
+}
+
+int64_t TaskDB::add_book(const Book &book) {
+  std::ostringstream q;
+  q << "INSERT INTO books (title, title_en, description, url, min_rank, "
+       "max_rank) VALUES ("
+    << "'" << book.title << "', "
+    << "'" << book.title_en << "', "
+    << "'" << book.description << "', "
+    << "'" << book.url << "', " << (int)book.min_rank << ", "
+    << (int)book.max_rank << ");";
+
+  if (sqlite3_exec(db_, q.str().c_str(), nullptr, nullptr, nullptr)) {
+    LOG(ERROR) << "add_book: code=" << sqlite3_errcode(db_) << ": "
+               << sqlite3_errmsg(db_) << "\nquery: `" << q.str() << "`";
+    return -1;
+  }
+
+  const int64_t book_id = sqlite3_last_insert_rowid(db_);
+  return book_id;
+}
+
+int TaskDB::list_books_cb(void *out, int /*column_count*/, char **column_value,
+                          char ** /*column_name*/) {
+  Book book;
+  book.id = std::stoll(column_value[0]);
+  book.title = column_value[1];
+  book.title_en = column_value[2];
+  book.description = column_value[3];
+  book.url = column_value[4];
+  book.min_rank = Rank(std::stoi(column_value[5]));
+  book.max_rank = Rank(std::stoi(column_value[6]));
+  ((std::vector<Book> *)out)->emplace_back(book);
+  return 0;
+}
+
+std::vector<Book> TaskDB::list_books() const {
+  std::vector<Book> books;
+  const char *q = "SELECT * FROM books;";
+  if (sqlite3_exec(db_, q, list_books_cb, &books, nullptr)) {
+    LOG(ERROR) << "list_books: code=" << sqlite3_errcode(db_) << ": "
+               << sqlite3_errmsg(db_) << "\nquery: `" << q << "`";
+    return {};
+  }
+  return books;
+}
+
+int TaskDB::add_book_chapter_cb(void *out, int /*column_count*/,
+                                char **column_value, char ** /*column_name*/) {
+  *((int64_t *)out) = std::stoll(column_value[0]);
+  return 0;
+}
+
+int64_t TaskDB::add_book_chapter(int64_t book_id, const BookChapter &chapter) {
+  std::ostringstream q;
+  q << "INSERT INTO book_chapters (book_id, id, title) "
+    << "SELECT " << book_id << ", 1+COALESCE(MAX(id), 0), '" << chapter.title
+    << "' FROM book_chapters WHERE book_id = " << book_id << ";";
+
+  if (sqlite3_exec(db_, q.str().c_str(), nullptr, nullptr, nullptr)) {
+    LOG(ERROR) << "add_book_chapter: code=" << sqlite3_errcode(db_) << ": "
+               << sqlite3_errmsg(db_) << "\nquery: `" << q.str() << "`";
+    return -1;
+  }
+
+  int64_t chapter_id = -1;
+  q.str("");
+  q << "SELECT MAX(id) FROM book_chapters WHERE book_id = " << book_id << ";";
+  if (sqlite3_exec(db_, q.str().c_str(), add_book_chapter_cb, &chapter_id,
+                   nullptr)) {
+    LOG(ERROR) << "add_book_chapter: code=" << sqlite3_errcode(db_) << ": "
+               << sqlite3_errmsg(db_) << "\nquery: `" << q.str() << "`";
+    return -1;
+  }
+
+  return chapter_id;
+}
+
+int TaskDB::list_book_chapters_cb(void *out, int /*column_count*/,
+                                  char **column_value,
+                                  char ** /*column_name*/) {
+  BookChapter chapter;
+  chapter.book_id = std::stoll(column_value[0]);
+  chapter.id = std::stoll(column_value[1]);
+  chapter.title = column_value[2];
+  ((std::vector<BookChapter> *)out)->emplace_back(chapter);
+  return 0;
+}
+
+std::vector<BookChapter> TaskDB::list_book_chapters(int64_t book_id) const {
+  std::vector<BookChapter> chapters;
+  std::ostringstream q;
+  q << "SELECT * FROM book_chapters WHERE book_id = " << book_id << ";";
+
+  if (sqlite3_exec(db_, q.str().c_str(), list_book_chapters_cb, &chapters,
+                   nullptr)) {
+    LOG(ERROR) << "list_book_chapters: code=" << sqlite3_errcode(db_) << ": "
+               << sqlite3_errmsg(db_) << "\nquery: `" << q.str() << "`";
+    return {};
+  }
+
+  return chapters;
+}
+
+void TaskDB::add_book_task(int64_t book_id, int64_t chapter_id,
+                           int64_t task_id) {
+  std::ostringstream q;
+  q << "INSERT INTO book_tasks (book_id, chapter_id, task_id) VALUES ("
+    << book_id << ", " << chapter_id << ", " << task_id << ");";
+
+  if (sqlite3_exec(db_, q.str().c_str(), nullptr, nullptr, nullptr)) {
+    LOG(ERROR) << "add_book_task: code=" << sqlite3_errcode(db_) << ": "
+               << sqlite3_errmsg(db_) << "\nquery: `" << q.str() << "`";
+  }
+}
+
+int TaskDB::list_book_tasks_cb(void *out, int column_count, char **column_value,
+                               char **column_name) {
+  std::optional<Task> task;
+  if (auto ret = get_task_cb(&task, column_count, column_value, column_name)) {
+    return ret;
+  }
+  ((std::vector<Task> *)out)->emplace_back(std::move(*task));
+  return 0;
+}
+
+std::vector<Task> TaskDB::list_book_tasks(
+    int64_t book_id, std::optional<int64_t> chapter_id) const {
+  std::vector<Task> tasks;
+  std::ostringstream q;
+  q << "SELECT * FROM tasks "
+    << "INNER JOIN book_tasks ON "
+    << "tasks.id = book_tasks.task_id AND "
+    << "book_tasks.book_id = " << book_id;
+  if (chapter_id) q << " AND book_tasks.chapter_id = " << *chapter_id;
+  q << ";";
+  if (sqlite3_exec(db_, q.str().c_str(), list_book_tasks_cb, &tasks, nullptr)) {
+    LOG(ERROR) << "list_book_tasks: code=" << sqlite3_errcode(db_) << ": "
+               << sqlite3_errmsg(db_) << "\nquery: `" << q.str() << "`";
+    return {};
+  }
+  return tasks;
 }
 
 TaskVTreeIterator::TaskVTreeIterator(const Task &task) : task_(task) {

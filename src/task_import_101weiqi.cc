@@ -57,6 +57,7 @@ std::optional<Task> import_101weiqi_task(std::string_view data) {
   task.vtree_ = std::make_unique<TreeNode>();
   for (const auto& ans : e["answers"]) {
     if (ans["st"] != 2) continue;
+    if (ans["ty"] == 2) continue;  // skip variations
     if (ans["pts"].empty()) continue;
 
     TreeNode* cur = task.vtree_.get();

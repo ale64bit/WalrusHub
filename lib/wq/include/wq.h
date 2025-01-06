@@ -35,6 +35,8 @@ class Board {
   bool move(Color col, int r, int c, PointList &removed);
   bool undo(int &r_out, int &c_out, PointList &added);
 
+  static const wq::PointList &star_points(int board_size);
+
  private:
   const int row_count_;
   const int col_count_;

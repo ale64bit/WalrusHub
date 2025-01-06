@@ -11,8 +11,9 @@ class MainWindow : public Window {
 
  private:
   static void on_editor_clicked(GtkWidget* widget, gpointer data);
-  static void on_solve_clicked(GtkWidget* widget, gpointer data);
   static void on_play_ai_clicked(GtkWidget* widget, gpointer data);
+  static void on_solve_clicked(GtkWidget* widget, gpointer data);
+  static void on_books_clicked(GtkWidget* widget, gpointer data);
   static void on_stats_clicked(GtkWidget* widget, gpointer data);
   static void on_settings_clicked(GtkWidget* widget, gpointer data);
   static void on_about_clicked(GtkWidget* widget, gpointer data);

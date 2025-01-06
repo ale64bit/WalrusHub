@@ -5,50 +5,12 @@
 
 #include "log.h"
 
-static const std::map<int, std::vector<std::pair<int, int>>>
-    kStarPointPositions = {
-        {
-            9,
-            {
-                {2, 2},
-                {2, 6},
-                {6, 2},
-                {6, 6},
-                {4, 4},
-            },
-        },
-        {
-            13,
-            {
-                {3, 3},
-                {3, 9},
-                {9, 3},
-                {9, 9},
-                {6, 6},
-            },
-        },
-        {
-            19,
-            {
-                {3, 3},
-                {3, 9},
-                {3, 15},
-                {9, 3},
-                {9, 9},
-                {9, 15},
-                {15, 3},
-                {15, 9},
-                {15, 15},
-            },
-        },
-};
-
 namespace ui {
 
 GtkBoard::GtkBoard(std::string id, int board_size, int r1, int c1, int r2,
                    int c2, std::mt19937 &rand_gen)
     : rand_gen_(rand_gen), id_(id), board_size_(0) {
-  grid_ = (GtkGrid *)gtk_grid_new();
+  grid_ = GTK_GRID(gtk_grid_new());
   gtk_grid_set_row_spacing(grid_, 0);
   gtk_grid_set_column_spacing(grid_, 0);
   gtk_grid_set_row_homogeneous(grid_, true);
@@ -216,14 +178,11 @@ void GtkBoard::board_lines_draw_function(GtkDrawingArea *, cairo_t *cr, int w,
 
   // Star points
   if (goban->board_border_mask_ == 0xF) {
-    if (auto positions = kStarPointPositions.find(goban->board_size_);
-        positions != kStarPointPositions.end()) {
-      for (const auto &[r, c] : positions->second) {
-        const double x = hpsize + c * psize;
-        const double y = hpsize + r * psize;
-        cairo_arc(cr, x, y, psize / 10, 0, 2 * M_PI);
-        cairo_fill(cr);
-      }
+    for (const auto &[r, c] : wq::Board::star_points(goban->board_size_)) {
+      const double x = hpsize + (c - goban->col_offset_) * psize;
+      const double y = hpsize + (r - goban->row_offset_) * psize;
+      cairo_arc(cr, x, y, psize / 10, 0, 2 * M_PI);
+      cairo_fill(cr);
     }
   }
 }

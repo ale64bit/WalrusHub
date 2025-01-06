@@ -13,13 +13,27 @@ namespace ui {
 
 SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
                          std::optional<std::pair<int, Rank>> tag_ref)
-    : Window(ctx),
-      preset_(preset),
-      tag_ref_(tag_ref),
-      task_ids_(ctx.tasks().get_tasks(preset)) {
+    : Window(ctx) {
+  preset_ = preset;
+  tag_ref_ = tag_ref;
+  task_ids_ = ctx.tasks().get_tasks(preset);
   std::shuffle(task_ids_.begin(), task_ids_.end(), ctx_.rand());
   if (preset_.max_tasks_ > 0 && preset_.max_tasks_ < (int)task_ids_.size())
     task_ids_.resize(preset_.max_tasks_);
+  init();
+}
+
+SolveWindow::SolveWindow(AppContext& ctx, std::string description,
+                         const std::vector<Task>& tasks, int time_limit_sec)
+    : Window(ctx) {
+  preset_.description_ = description;
+  preset_.time_limit_sec_ = time_limit_sec;
+  preset_.max_tasks_ = (int)tasks.size();
+  for (const auto& task : tasks) task_ids_.push_back(task.id_);
+  init();
+}
+
+void SolveWindow::init() {
   LOG(INFO) << "solve session started: task_count=" << task_ids_.size();
 
   gtk_window_set_title(GTK_WINDOW(window_), preset_.description_.c_str());
@@ -55,11 +69,11 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
 
   board_ = std::make_unique<wq::Board>(19, 19);
   goban_ = std::make_unique<GtkBoard>("testpan", 19, 0, 0, 18, 18, ctx_.rand());
-  goban_->set_board_texture(ctx.board_texture());
-  goban_->set_black_stone_textures(ctx.black_stone_textures().data(),
-                                   ctx.black_stone_textures().size());
-  goban_->set_white_stone_textures(ctx.white_stone_textures().data(),
-                                   ctx.white_stone_textures().size());
+  goban_->set_board_texture(ctx_.board_texture());
+  goban_->set_black_stone_textures(ctx_.black_stone_textures().data(),
+                                   ctx_.black_stone_textures().size());
+  goban_->set_white_stone_textures(ctx_.white_stone_textures().data(),
+                                   ctx_.white_stone_textures().size());
   gtk_box_append(GTK_BOX(box), goban_->widget());
 
   //================================================================================
@@ -118,7 +132,7 @@ SolveWindow::SolveWindow(AppContext& ctx, SolvePreset preset,
 
   load_task(task_ids_[cur_task_index_]);
 
-  if (preset.time_limit_sec_ > 0) {
+  if (preset_.time_limit_sec_ > 0) {
     timer_source_ = g_timeout_add(1000, on_timer_tick, this);
   } else {
     timer_source_ = 0;

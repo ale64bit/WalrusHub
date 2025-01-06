@@ -140,6 +140,22 @@ struct TaskTag {
   std::string url_;
 };
 
+struct Book {
+  int64_t id;
+  std::string title;
+  std::string title_en;
+  std::string description;
+  std::string url;
+  Rank min_rank;
+  Rank max_rank;
+};
+
+struct BookChapter {
+  int64_t book_id;
+  int64_t id;
+  std::string title;
+};
+
 class TaskDB {
  public:
   TaskDB(const char* path);
@@ -152,6 +168,17 @@ class TaskDB {
   int64_t add_task(const Task& task);
   std::optional<Task> get_task(int64_t id) const;
   std::vector<int64_t> get_tasks(SolvePreset preset) const;
+
+  int64_t add_book(const Book& book);
+  std::vector<Book> list_books() const;
+  std::optional<Book> get_book(int64_t id) const;
+  int64_t add_book_chapter(int64_t book_id, const BookChapter& chapter);
+  std::vector<BookChapter> list_book_chapters(int64_t book_id) const;
+  std::optional<BookChapter> get_book_chapter(int64_t book_id,
+                                              int64_t chapter_id) const;
+  void add_book_task(int64_t book_id, int64_t chapter_id, int64_t task_id);
+  std::vector<Task> list_book_tasks(int64_t book_id,
+                                    std::optional<int64_t> chapter_id) const;
 
  private:
   sqlite3* db_;
@@ -180,6 +207,14 @@ class TaskDB {
                           char** column_name);
   static int get_task_cb(void* out, int column_count, char** column_value,
                          char** column_name);
+  static int list_books_cb(void* out, int column_count, char** column_value,
+                           char** column_name);
+  static int list_book_chapters_cb(void* out, int column_count,
+                                   char** column_value, char** column_name);
+  static int add_book_chapter_cb(void* out, int column_count,
+                                 char** column_value, char** column_name);
+  static int list_book_tasks_cb(void* out, int column_count,
+                                char** column_value, char** column_name);
 };
 
 class TaskVTreeIterator {
